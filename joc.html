@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Călire și revenire · Joc de recapitulare</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Joc de tip quiz: un ecran pe rând (start → întrebare → feedback → final). Paleta preia tokenii aplicației principale. */
+:root{
+  --bg:#ECEFF2; --surface:#FFFFFF; --sunk:#F5F7F9; --fg:#18202A; --muted:#566270; --line:#D2D8DF;
+  --heat:#C2410C; --temper:#2D5B8A; --ok:#1E7A46; --ok-soft:#E1F3E8; --bad:#B42318; --bad-soft:#FBE4E2;
+  --a1:#B42318; --a2:#2D5B8A; --a3:#9A6200; --a4:#1E7A46;
+  --f-display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --f-body:"IBM Plex Sans","Segoe UI",Roboto,Arial,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#11161C; --surface:#1A2129; --sunk:#151B22; --fg:#E5EAF0; --muted:#9AA6B3; --line:#2D3742;
+  --heat:#F27A3A; --temper:#86AEDB; --ok:#5CC98A; --ok-soft:#163323; --bad:#F2877D; --bad-soft:#3A1C1A;
+  color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.5;min-height:100vh}
+.wrap{max-width:860px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-right,0px)) 40px max(16px,env(safe-area-inset-left,0px))}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.brand{font-family:var(--f-display);font-weight:700;font-size:1.5rem;letter-spacing:.01em}
+.brand small{display:block;font-family:var(--f-mono);font-weight:500;font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--heat)}
+.hud{display:flex;gap:10px;font-family:var(--f-mono);font-size:.85rem}
+.hud span{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px 12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.pic{position:relative;background:var(--sunk);aspect-ratio:16/7;max-height:300px;width:100%}
+.pic img{width:100%;height:100%;object-fit:cover;display:block}
+.credit{position:absolute;right:8px;bottom:6px;font-size:.68rem;color:#fff;background:rgba(0,0,0,.45);padding:1px 6px;border-radius:3px}
+.body{padding:18px 20px 22px}
+h1,h2{font-family:var(--f-display);font-weight:700;line-height:1.08;margin:0 0 10px;text-wrap:balance}
+h1{font-size:clamp(2rem,6vw,3rem)} h2{font-size:clamp(1.4rem,4vw,2rem)}
+.timer{height:8px;background:var(--sunk);border-radius:999px;overflow:hidden;margin:4px 0 16px;border:1px solid var(--line)}
+.timer i{display:block;height:100%;background:var(--heat);width:100%;transition:width .25s linear}
+.answers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:560px){.answers{grid-template-columns:1fr}}
+.ans{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:12px;padding:16px;border-radius:6px;color:#fff;font-weight:600;font-size:1.05rem;min-height:64px}
+.ans .sh{font-size:1.3rem;width:1.4em;text-align:center;flex-shrink:0}
+.ans:nth-child(1){background:var(--a1)} .ans:nth-child(2){background:var(--a2)} .ans:nth-child(3){background:var(--a3)} .ans:nth-child(4){background:var(--a4)}
+.ans:focus-visible{outline:3px solid var(--fg);outline-offset:2px}
+.ans[disabled]{cursor:default;opacity:.35}
+.ans.correct{opacity:1;box-shadow:0 0 0 4px var(--ok)}
+.ans.chosen{opacity:1}
+.fb{margin-top:14px;padding:12px 14px;border-radius:6px;border-left:5px solid}
+.fb.ok{background:var(--ok-soft);border-color:var(--ok)} .fb.bad{background:var(--bad-soft);border-color:var(--bad)}
+.fb b{font-family:var(--f-display);font-size:1.3rem}
+.btn{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border-radius:6px;background:var(--fg);color:var(--surface);font-weight:600}
+.btn.heat{background:var(--heat);color:#fff}
+.btn.ghost{background:transparent;color:var(--fg);box-shadow:0 0 0 1px var(--line) inset}
+.btn:focus-visible{outline:3px solid var(--temper);outline-offset:2px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:16px}
+input[type=text]{font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--fg);min-width:0;flex:1 1 220px}
+.big{font-family:var(--f-display);font-weight:700;font-size:clamp(4rem,16vw,7rem);line-height:1;color:var(--heat);font-variant-numeric:tabular-nums}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0}
+.kpi{border:1px solid var(--line);border-radius:6px;padding:10px;background:var(--sunk)}
+.kpi .k{font-family:var(--f-mono);font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.kpi .v{font-family:var(--f-display);font-weight:700;font-size:1.7rem;font-variant-numeric:tabular-nums}
+.review{list-style:none;padding:0;margin:10px 0 0;display:grid;gap:6px}
+.review li{display:flex;gap:10px;padding:8px 10px;border-radius:4px;background:var(--sunk);font-size:.92rem}
+.review .m{font-weight:700;flex-shrink:0}
+.review .m.ok{color:var(--ok)} .review .m.bad{color:var(--bad)}
+.muted{color:var(--muted)} .small{font-size:.86rem}
+.foot{margin-top:16px;font-size:.78rem;color:var(--muted)}
+.foot a{color:inherit}
+@media (prefers-reduced-motion: reduce){.timer i{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brand"><small>Recapitulare · tratamente termice</small>Călire și revenire</div>
+    <div class="hud" id="hud" hidden><span id="hq">1 / 12</span><span id="hp">0 puncte</span></div>
+  </div>
+  <main id="app" class="card" aria-live="polite"></main>
+  <p class="foot">Fotografii: <a href="https://unsplash.com" target="_blank" rel="noopener">Unsplash</a> (autorii sunt menționați pe fiecare imagine). Valorile Ac din întrebări sunt date în enunț. <a href="./">Înapoi la lecție</a></p>
+</div>
+<script>
+const IMG = id => `https://images.unsplash.com/${id}?w=1100&h=480&fit=crop&auto=format&q=70`;
+const COVER = {src: IMG('photo-1539361780044-2247b1f8ac48'), by: '@olav_ahrens'};
+const FINAL = {src: IMG('photo-1513151233558-d860c5398176'), by: '@ninjason'};
+const Q = [{"q": "Ce structură urmărim prin călirea oțelului?", "opts": ["martensita", "ferita", "perlita", "cementita"], "ok": 0, "ex": "Prin răcire mai rapidă decât viteza critică, austenita se transformă în martensită, dură și fragilă.", "img": {"src": "https://images.unsplash.com/photo-1602052577122-f73b9710adba?w=1100&h=480&fit=crop&auto=format&q=70", "by": "@trnavskauni"}}, {"q": "La călire, după încălzire și menținere, oțelul se răcește:", "opts": ["mai rapid decât viteza critică de călire", "lent, în cuptor", "în aer liniștit", "în nisip uscat"], "ok": 0, "ex": "Răcirea lentă în cuptor înseamnă recoacere, iar răcirea în aer înseamnă normalizare. Călirea cere o viteză mai mare decât cea critică.", "img": {"src": "https://images.unsplash.com/photo-1780480069672-8ef12cf5c14d?w=1100&h=480&fit=crop&auto=format&q=70", "by": "@wolfgang_hasselmann"}}, {"q": "Oțel hipoeutectoid cu Ac3 = 790 °C. Ce temperatură de călire alegi?", "opts": ["830 °C", "760 °C", "790 °C", "950 °C"], "ok": 0, "time": 30, "ex": "Regula: Ac3 + 30…50 °C = 820…840 °C. Sub Ac3 rămâne ferită, iar mult peste interval grăuntele crește.", "img": {"src": "https://images.unsplash.com/photo-1782054845316-3a333d6d8fb1?w=1100&h=480&fit=crop&auto=format&q=70", "by": "@jonmsailer"}}, {"q": "Oțel hipereutectoid cu Ac1 = 730 °C. Ce temperatură de călire alegi?", "opts": ["770 °C", "700 °C", "850 °C", "1000 °C"], "ok": 0, "time": 30, "ex": "Regula: Ac1 + 30…50 °C = 760…780 °C. Cementita secundară nedizolvată mărește rezistența la uzură.", "img": {"src": "https://images.unsplash.com/photo-1631396326628-3105f48b6f2b?w=1100&h=480&fit=crop&auto=format&q=70", "by": "@baileyal3xander"}}, {"q": "Ce mediu de răcire alegi la călirea unei piese din oțel carbon OLC 45?", "opts": ["apă", "ulei", "aer", "cuptor"], "ok": 0, "ex": "Oțelul carbon nealiat are o viteză critică de călire mare și are nevoie de răcire energică, în apă.", "img": {"src": "https://images.unsplash.com/photo-1666634157070-6fd830fb5672?w=1100&h=480&fit=crop&auto=format&q=70", "by": "@sven_daniel"}}, {"q": "Ce mediu de răcire alegi la călirea unei piese din oțel aliat 40Cr10?", "opts": ["ulei", "apă", "aer", "cuptor"], "ok": 0, "ex": "Oțelul aliat are o viteză critică mai mică. Uleiul este suficient și reduce riscul de fisurare.", "img": {"src": "https://images.unsplash.com/photo-1709293078197-370c804d610c?w=1100&h=480&fit=crop&auto=format&q=70", "by": "@scentspiracy"}}, {"q": "Adevărat sau fals: revenirea se face prin încălzirea piesei călite peste Ac3.", "opts": ["Fals", "Adevărat"], "ok": 0, "ex": "Revenirea se face întotdeauna sub Ac1. Peste punctul critic s-ar pierde efectul călirii.", "img": {"src": "https://images.unsplash.com/photo-1693565767828-d2daf1abb3e9?w=1100&h=480&fit=crop&auto=format&q=70", "by": "@noa69"}}, {"q": "Adevărat sau fals: revenirea reduce tensiunile interne și fragilitatea lăsate de călire.", "opts": ["Adevărat", "Fals"], "ok": 0, "ex": "Acesta este rolul revenirii: crește tenacitatea, iar duritatea scade puțin.", "img": {"src": "https://images.unsplash.com/photo-1570460147789-4e2e622bbb25?w=1100&h=480&fit=crop&auto=format&q=70", "by": "@_miltiadis_"}}, {"q": "O piesă călită este revenită la 200 °C. Ce tip de revenire este?", "opts": ["revenire joasă", "revenire medie", "revenire înaltă"], "ok": 0, "ex": "Revenirea joasă are loc între 150 și 250 °C și păstrează duritatea mare, de exemplu la lamele de cuțit și la scule.", "img": {"src": "https://images.unsplash.com/photo-1596299085622-4f96269e5bc7?w=1100&h=480&fit=crop&auto=format&q=70", "by": "@octadan"}}, {"q": "Ce revenire aplici unui arc elicoidal după călire?", "opts": ["medie (350–500 °C)", "joasă (150–250 °C)", "înaltă (500–650 °C)"], "ok": 0, "ex": "Arcurile au nevoie de o limită de elasticitate ridicată: revenire medie, cu troostită de revenire.", "img": {"src": "https://images.unsplash.com/photo-1732305130486-15665abfdf92?w=1100&h=480&fit=crop&auto=format&q=70", "by": "@randomthinking"}}, {"q": "Ce revenire aplici unui burghiu după călire?", "opts": ["joasă (150–250 °C)", "medie (350–500 °C)", "înaltă (500–650 °C)"], "ok": 0, "ex": "Sculele așchietoare trebuie să-și păstreze duritatea: revenire joasă, cu martensită de revenire.", "img": {"src": "https://images.unsplash.com/photo-1503792574895-6074f691cc6a?w=1100&h=480&fit=crop&auto=format&q=70", "by": "@mattartz"}}, {"q": "Cum se numește călirea urmată de revenire înaltă?", "opts": ["îmbunătățire", "recoacere", "normalizare", "cementare"], "ok": 0, "ex": "Îmbunătățirea dă tenacitate și rezistență la oboseală pieselor ca arborii și bielele.", "img": {"src": "https://images.unsplash.com/photo-1429772011165-0c2e054367b8?w=1100&h=480&fit=crop&auto=format&q=70", "by": "@garett3"}}];
+const LIMIT_DEFAULT = 20;
+const SHAPES = ['▲','◆','●','■'];
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const S = {name:'', i:0, points:0, correct:0, streak:0, log:[], order:[], timer:null, t0:0};
+function shuffle(a){ a = a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function pic(p){ return `<div class="pic"><img src="${p.src}" alt="" onerror="this.parentNode.hidden=true"><span class="credit">Foto: ${esc(p.by)} / Unsplash</span></div>`; }
+
+function start(){
+  $('#hud').hidden = true;
+  let saved = ''; try{ saved = localStorage.getItem('iac-joc-nume') || ''; }catch(e){}
+  $('#app').innerHTML = pic(COVER) + `<div class="body">
+    <h1>Joc de recapitulare</h1>
+    <p>${Q.length} întrebări despre călirea și revenirea oțelului. Ai ${LIMIT_DEFAULT} de secunde pentru fiecare (30 la calcule). Cu cât răspunzi mai repede, cu atât primești mai multe puncte, iar răspunsurile corecte la rând îți aduc bonus.</p>
+    <form id="f" class="row"><label for="nume" class="small muted" style="flex-basis:100%">Numele tău</label>
+      <input type="text" id="nume" maxlength="30" placeholder="de exemplu, Andrei" value="${esc(saved)}" autocomplete="given-name">
+      <button class="btn heat" type="submit">Începe jocul ▶</button></form></div>`;
+  $('#f').addEventListener('submit', e => { e.preventDefault();
+    S.name = $('#nume').value.trim() || 'jucătorule'; try{ localStorage.setItem('iac-joc-nume', S.name); }catch(e){}
+    S.i = 0; S.points = 0; S.correct = 0; S.streak = 0; S.log = []; S.order = shuffle(Q.map((_, k) => k));
+    $('#hud').hidden = false; ask(); });
+  $('#nume').focus();
+}
+
+function ask(){
+  const q = Q[S.order[S.i]];
+  const limit = q.time || LIMIT_DEFAULT;
+  const opts = shuffle(q.opts.map((t, k) => ({t, ok: k === q.ok})));
+  $('#hq').textContent = `${S.i + 1} / ${Q.length}`; $('#hp').textContent = `${S.points} puncte`;
+  $('#app').innerHTML = pic(q.img) + `<div class="body">
+    <h2>${esc(q.q)}</h2>
+    <div class="timer" aria-hidden="true"><i id="bar"></i></div>
+    <p class="small muted" id="left">${limit} secunde</p>
+    <div class="answers" role="group" aria-label="Variante de răspuns">${opts.map((o, k) => `<button class="ans" type="button" data-k="${k}"><span class="sh" aria-hidden="true">${SHAPES[k]}</span><span>${esc(o.t)}</span></button>`).join('')}</div>
+    <div id="fb"></div></div>`;
+  const btns = [...document.querySelectorAll('.ans')];
+  btns.forEach(b => b.addEventListener('click', () => answer(q, opts, +b.dataset.k, limit)));
+  btns[0].focus({preventScroll:true});
+  S.t0 = performance.now();
+  clearInterval(S.timer);
+  S.timer = setInterval(() => {
+    const el = (performance.now() - S.t0) / 1000, rem = Math.max(0, limit - el);
+    $('#bar').style.width = (rem / limit * 100) + '%';
+    $('#left').textContent = `${Math.ceil(rem)} secunde`;
+    if (rem <= 0) answer(q, opts, -1, limit);
+  }, 200);
+}
+
+function answer(q, opts, k, limit){
+  clearInterval(S.timer);
+  const btns = [...document.querySelectorAll('.ans')];
+  if (btns[0].disabled) return;
+  const el = Math.min(limit, (performance.now() - S.t0) / 1000);
+  const ok = k >= 0 && opts[k].ok;
+  let gained = 0;
+  if (ok){ S.correct++; S.streak++; gained = Math.round(1000 * (1 - el / limit / 2)) + (S.streak >= 2 ? 100 * Math.min(S.streak - 1, 5) : 0); }
+  else S.streak = 0;
+  S.points += gained;
+  S.log.push({q: q.q, ok, right: q.opts[q.ok], given: k >= 0 ? opts[k].t : '(timpul a expirat)'});
+  btns.forEach((b, j) => { b.disabled = true; if (opts[j].ok) b.classList.add('correct'); if (j === k) b.classList.add('chosen'); });
+  $('#hp').textContent = `${S.points} puncte`;
+  const last = S.i === Q.length - 1;
+  $('#fb').innerHTML = `<div class="fb ${ok ? 'ok' : 'bad'}"><b>${ok ? 'Corect!' : (k < 0 ? 'Timpul a expirat.' : 'Greșit.')}</b> ${ok ? `+${gained} puncte${S.streak >= 2 ? ` · serie de ${S.streak} răspunsuri corecte` : ''}.` : `Răspunsul corect: <b style="font-family:inherit;font-size:inherit">${esc(q.opts[q.ok])}</b>.`}<br><span class="small">${esc(q.ex)}</span></div>
+    <div class="row"><button class="btn" type="button" id="next">${last ? 'Vezi rezultatul' : 'Întrebarea următoare →'}</button></div>`;
+  $('#next').addEventListener('click', () => { if (last) finish(); else { S.i++; ask(); } });
+  $('#next').focus({preventScroll:true});
+}
+
+function finish(){
+  $('#hud').hidden = true;
+  const n = Q.length, pct = Math.round(S.correct / n * 100);
+  const msg = pct === 100 ? `Felicitări, ${S.name}! Ai răspuns corect la toate întrebările. Stăpânești perfect călirea și revenirea!`
+    : pct >= 80 ? `Felicitări, ${S.name}! Ai atins obiectivul lecției (cel puțin 80 % răspunsuri corecte).`
+    : pct >= 50 ? `Bravo, ${S.name}, ești pe drumul cel bun! Mai exersează puțin în aplicație și vei atinge pragul de 80 %.`
+    : `Bravo că ai dus jocul până la capăt, ${S.name}! Reia lecția și exersarea din aplicație, apoi încearcă din nou.`;
+  $('#app').innerHTML = pic(FINAL) + `<div class="body">
+    <h2>${esc(msg)}</h2>
+    <div class="big" aria-label="${pct} la sută răspunsuri corecte">${pct} %</div>
+    <p class="muted">răspunsuri corecte</p>
+    <div class="kpis"><div class="kpi"><div class="k">Corecte</div><div class="v">${S.correct} / ${n}</div></div>
+      <div class="kpi"><div class="k">Greșite</div><div class="v">${n - S.correct}</div></div>
+      <div class="kpi"><div class="k">Puncte</div><div class="v">${S.points}</div></div></div>
+    <details><summary>Vezi răspunsurile tale</summary><ol class="review">${S.log.map(l => `<li><span class="m ${l.ok ? 'ok' : 'bad'}">${l.ok ? '✓' : '✗'}</span><span>${esc(l.q)}<br><span class="small muted">${l.ok ? 'Ai răspuns corect: ' + esc(l.right) : 'Ai ales: ' + esc(l.given) + ' · corect: ' + esc(l.right)}</span></span></li>`).join('')}</ol></details>
+    <div class="row"><button class="btn heat" type="button" id="again">Joacă din nou</button><a class="btn ghost" href="./">Înapoi la lecție</a></div></div>`;
+  $('#again').addEventListener('click', start);
+}
+start();
+</script>
+</body>
+</html>
