@@ -1,0 +1,779 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Călire și revenire</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: o „linie de proces” sus (cele 9 evenimente Gagné colorate ca o rampă termică), sub ea un singur panou de lucru. */
+:root{
+  --bg:#ECEFF2; --surface:#FFFFFF; --sunk:#F5F7F9; --fg:#18202A; --muted:#566270; --line:#D2D8DF;
+  --heat:#C2410C; --heat-soft:#FCE9DE; --temper:#2D5B8A; --temper-soft:#E3ECF6;
+  --ok:#1E7A46; --ok-soft:#E1F3E8; --bad:#B42318; --bad-soft:#FBE4E2; --warn:#9A6200; --warn-soft:#FDF1D8;
+  --f-display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --f-body:"IBM Plex Sans","Segoe UI",Roboto,Arial,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  --r:6px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11161C; --surface:#1A2129; --sunk:#151B22; --fg:#E5EAF0; --muted:#9AA6B3; --line:#2D3742;
+  --heat:#F27A3A; --heat-soft:#3A2418; --temper:#86AEDB; --temper-soft:#1C2B3D;
+  --ok:#5CC98A; --ok-soft:#163323; --bad:#F2877D; --bad-soft:#3A1C1A; --warn:#E8B44F; --warn-soft:#352914;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11161C; --surface:#1A2129; --sunk:#151B22; --fg:#E5EAF0; --muted:#9AA6B3; --line:#2D3742;
+  --heat:#F27A3A; --heat-soft:#3A2418; --temper:#86AEDB; --temper-soft:#1C2B3D;
+  --ok:#5CC98A; --ok-soft:#163323; --bad:#F2877D; --bad-soft:#3A1C1A; --warn:#E8B44F; --warn-soft:#352914;
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.55}
+.wrap{max-width:1060px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:8px 24px;margin-bottom:16px}
+.brand h1{font-family:var(--f-display);font-weight:700;font-size:clamp(2rem,5vw,2.8rem);line-height:1;margin:0;letter-spacing:.01em;text-wrap:balance}
+.brand p{margin:4px 0 0;color:var(--muted);font-size:.9rem}
+.eyebrow{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--heat)}
+.vakbadge{font-family:var(--f-mono);font-size:.8rem;color:var(--muted)}
+.vakbadge b{color:var(--fg)}
+/* stepper */
+.rail{overflow-x:auto;margin:0 0 18px;padding-bottom:4px}
+.rail ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(10,minmax(78px,1fr));gap:4px;min-width:820px}
+.rail button{all:unset;cursor:pointer;display:block;width:100%;box-sizing:border-box;padding:8px 8px 9px;border-radius:4px;background:var(--surface);border:1px solid var(--line);font-size:.74rem;line-height:1.25;color:var(--muted);position:relative}
+.rail button::before{content:"";position:absolute;left:0;right:0;top:0;height:4px;border-radius:4px 4px 0 0;background:var(--c)}
+.rail button .n{display:block;font-family:var(--f-display);font-weight:700;font-size:1.15rem;color:var(--fg)}
+.rail button[aria-current="step"]{border-color:var(--fg);color:var(--fg);box-shadow:0 0 0 1px var(--fg) inset}
+.rail button.done .n::after{content:" ✓";color:var(--ok);font-size:.9rem}
+.rail button:focus-visible,.btn:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,.opt:focus-within{outline:3px solid var(--temper);outline-offset:2px}
+/* panel */
+main.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:clamp(18px,3vw,32px)}
+.phase{font-family:var(--f-mono);font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0}
+h2{font-family:var(--f-display);font-weight:700;font-size:clamp(1.6rem,3.6vw,2.2rem);line-height:1.05;margin:4px 0 12px;text-wrap:balance}
+h3{font-family:var(--f-display);font-weight:600;font-size:1.35rem;margin:22px 0 8px;line-height:1.15}
+p,li{max-width:68ch}
+.lead{font-size:1.07rem}
+.muted{color:var(--muted)}
+.small{font-size:.86rem}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:20px;align-items:start}
+.grid2>*{min-width:0}
+.box{background:var(--sunk);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.callout{border-left:4px solid var(--heat);background:var(--heat-soft);padding:12px 16px;border-radius:0 var(--r) var(--r) 0}
+.callout.t{border-left-color:var(--temper);background:var(--temper-soft)}
+.chip{display:inline-flex;align-items:center;gap:4px;font-family:var(--f-mono);font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--line);border-radius:999px;padding:2px 8px;color:var(--muted);background:var(--surface);white-space:nowrap}
+.chip.V{color:var(--temper);border-color:var(--temper)} .chip.A{color:var(--warn);border-color:var(--warn)} .chip.K{color:var(--heat);border-color:var(--heat)}
+body.pref-V .res.V, body.pref-A .res.A, body.pref-K .res.K{box-shadow:0 0 0 2px var(--fg)}
+body.pref-V .res.V .rec, body.pref-A .res.A .rec, body.pref-K .res.K .rec{display:inline-flex}
+.rec{display:none}
+.res{border-radius:var(--r)}
+.reshead{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:8px}
+.btn{all:unset;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 16px;border-radius:4px;background:var(--fg);color:var(--surface);font-weight:600;font-size:.93rem;line-height:1.2;text-align:center}
+.btn.ghost{background:transparent;color:var(--fg);box-shadow:0 0 0 1px var(--line) inset}
+.btn.heat{background:var(--heat);color:#fff}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.navrow{display:flex;justify-content:space-between;gap:10px;margin-top:28px;padding-top:16px;border-top:1px solid var(--line);flex-wrap:wrap}
+/* questions */
+.q{border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;margin:12px 0;background:var(--surface)}
+.q .qh{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline;margin-bottom:6px}
+.q .qt{font-weight:600}
+.opts{display:grid;gap:6px;margin-top:8px}
+.opt{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px solid var(--line);border-radius:4px;cursor:pointer;background:var(--sunk)}
+.opt input{margin-top:4px;accent-color:var(--heat)}
+.opt.ok{border-color:var(--ok);background:var(--ok-soft)} .opt.bad{border-color:var(--bad);background:var(--bad-soft)}
+.fb{margin-top:8px;padding:8px 12px;border-radius:4px;font-size:.93rem}
+.fb.ok{background:var(--ok-soft);color:var(--fg);border-left:4px solid var(--ok)}
+.fb.bad{background:var(--bad-soft);color:var(--fg);border-left:4px solid var(--bad)}
+.fb.warn{background:var(--warn-soft);color:var(--fg);border-left:4px solid var(--warn)}
+select,input[type=number],textarea{font:inherit;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:7px 9px;max-width:100%}
+textarea{width:100%;min-height:150px}
+.pts{font-family:var(--f-mono);font-size:.78rem;color:var(--muted)}
+/* tables */
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.93rem}
+th,td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+th{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+td.num,th.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;font-family:var(--f-mono)}
+.zone{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:middle}
+/* svg */
+svg text{font-family:var(--f-mono);fill:var(--muted)}
+svg .lbl{fill:var(--fg)}
+.diagram{width:100%;height:auto;display:block}
+/* sim */
+.sim{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:18px}
+.sim>*{min-width:0}
+.field{display:grid;gap:4px;margin-bottom:12px}
+.field label{font-weight:600;font-size:.9rem}
+.field select{width:100%;min-width:0}
+input[type=range]{width:100%;accent-color:var(--heat)}
+.readout{font-family:var(--f-mono);font-size:1.6rem;font-weight:500;font-variant-numeric:tabular-nums}
+.verdict{display:inline-block;font-family:var(--f-mono);font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;padding:3px 10px;border-radius:999px}
+.verdict.ok{background:var(--ok-soft);color:var(--ok)} .verdict.bad{background:var(--bad-soft);color:var(--bad)} .verdict.warn{background:var(--warn-soft);color:var(--warn)}
+.bar{height:10px;background:var(--sunk);border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--heat)}
+.bar.t i{background:var(--temper)}
+.seg{display:inline-flex;flex-wrap:wrap;gap:6px}
+.seg label{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:4px;padding:6px 10px;cursor:pointer;background:var(--sunk);font-size:.92rem}
+.seg input{accent-color:var(--heat)}
+.order li{display:flex;gap:8px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:4px;padding:6px 8px;margin:6px 0;background:var(--sunk)}
+.order li span{min-width:0}
+.order .mv{display:flex;gap:4px;flex-shrink:0}
+.order .mv button{all:unset;cursor:pointer;border:1px solid var(--line);border-radius:4px;width:30px;height:30px;display:grid;place-items:center;background:var(--surface)}
+.order .mv button:focus-visible{outline:3px solid var(--temper)}
+.score{font-family:var(--f-display);font-weight:700;font-size:3rem;line-height:1}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:12px 0}
+.kpi{border:1px solid var(--line);border-radius:var(--r);padding:12px;background:var(--sunk)}
+.kpi .k{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.kpi .v{font-family:var(--f-display);font-weight:700;font-size:1.9rem;font-variant-numeric:tabular-nums}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:8px 0 16px;flex-wrap:wrap}
+.tabs button{all:unset;cursor:pointer;padding:8px 14px;font-weight:600;color:var(--muted);border-bottom:3px solid transparent}
+.tabs button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--heat)}
+.tabs button:focus-visible{outline:3px solid var(--temper)}
+.foot{margin-top:18px;font-size:.8rem;color:var(--muted)}
+@media (prefers-reduced-motion: no-preference){ .glow{animation:glow 3.2s ease-in-out infinite alternate} @keyframes glow{from{filter:saturate(.8) brightness(.95)}to{filter:saturate(1.2) brightness(1.08)}} }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="eyebrow">Tratamente termice · liceu tehnologic</div>
+      <h1>Călire și revenire</h1>
+      <p>Aplicație de instruire asistată de calculator, structurată pe cele nouă evenimente ale instruirii (R. M. Gagné)</p>
+    </div>
+    <div class="vakbadge" id="vakbadge">Profil VAK: <b>necompletat</b></div>
+  </header>
+  <nav class="rail" aria-label="Evenimentele instruirii"><ol id="rail"></ol></nav>
+  <main class="panel" id="panel" tabindex="-1"></main>
+  <p class="foot">Valorile de temperatură sunt intervale uzuale din literatura de specialitate. Pot varia ușor între manuale și trebuie confirmate pentru o marcă de oțel concretă. Valorile critice (Ac1, Ac3, Acm) din exerciții sunt date în enunț.</p>
+</div>
+
+<script>
+window.KAHOOT_URL = "https://create.kahoot.it/creator/6e5715bb-dd07-4dc7-9718-4a61deb1af14";
+const C = {"meta": {"titlu": "Călire și revenire", "subtitlu": "Aplicație de instruire asistată de calculator", "disciplina": "Tratamente termice (modul de specialitate, domeniul Mecanică)", "nivel": "Liceu tehnologic", "autor": "Cătălin-Mihai VECHIU", "durata": "două ore de curs (2 × 50 de minute)"}, "obiective": [{"id": "O1", "bloom": "A-și aminti", "performanta": "să definească călirea și să ordoneze etapele ciclului călire–revenire", "conditii": "pe baza conținutului studiat în aplicație, fără material de sprijin", "criteriu": "definiția aleasă conține toate cele trei elemente esențiale (austenitizare, menținere, răcire cu viteză mai mare decât viteza critică), iar cel puțin 3 din 4 etape sunt plasate corect"}, {"id": "O2", "bloom": "A înțelege", "performanta": "să explice rolul revenirii aplicate după călire", "conditii": "dându-se afirmații despre revenire", "criteriu": "cel puțin 2 din 3 itemi rezolvați corect"}, {"id": "O3", "bloom": "A aplica", "performanta": "să stabilească temperatura de încălzire la călire", "conditii": "dându-se tipul oțelului (hipoeutectoid sau hipereutectoid) și temperatura critică Ac3, respectiv Ac1", "criteriu": "valoarea propusă se încadrează în intervalul Ac + 30…50 °C la cel puțin 4 din 5 exerciții"}, {"id": "O4", "bloom": "A aplica", "performanta": "să aleagă mediul de răcire adecvat la călire", "conditii": "dându-se categoria oțelului (carbon nealiat sau aliat)", "criteriu": "cel puțin 4 din 5 alegeri corecte"}, {"id": "O5", "bloom": "A analiza", "performanta": "să identifice tipul de revenire și intervalul de temperatură potrivite unei piese", "conditii": "dându-se piesa și condițiile ei de lucru", "criteriu": "cel puțin 2 din 3 asocieri corecte"}, {"id": "O6", "bloom": "A evalua", "performanta": "să propună și să argumenteze în scris regimul complet de tratament termic al unei piese", "conditii": "dându-se un studiu de caz (arbore de transmisie) și temperatura critică Ac3", "criteriu": "minimum 18 din 30 de puncte, conform baremului"}], "reactualizare": [{"q": "Temperatura transformării eutectoide din diagrama Fe–Fe₃C este:", "opts": ["727 °C", "912 °C", "1148 °C", "1495 °C"], "ok": 0, "fb": "La 727 °C (linia PSK, punctul critic A1) austenita se transformă în perlită la răcire."}, {"q": "Un oțel hipoeutectoid conține:", "opts": ["mai puțin de 0,77 % C", "exact 0,77 % C", "între 0,77 și 2,11 % C", "peste 2,11 % C"], "ok": 0, "fb": "Oțelurile hipoeutectoide au sub 0,77 % C (în unele manuale, valoarea rotunjită este 0,8 % C)."}, {"q": "Peste linia GS (punctul critic A3), structura unui oțel hipoeutectoid este:", "opts": ["ferită + perlită", "austenită", "martensită", "perlită + cementită secundară"], "ok": 1, "fb": "Deasupra liniei GS oțelul hipoeutectoid este complet austenitic. Aceasta este starea de la care pornește călirea."}, {"q": "Perlita este un amestec mecanic format din:", "opts": ["ferită și austenită", "ferită și cementită", "austenită și cementită", "martensită și ferită"], "ok": 1, "fb": "Perlita este eutectoidul ferită + cementită, cu aspect lamelar."}], "test": {"oficiu": 10, "items": [{"id": "I1", "sub": "I", "tip": "alegere multiplă", "cat": "obiectiv", "ob": "O1", "bloom": "A-și aminti", "p": 5, "q": "Călirea oțelului este tratamentul termic care constă în:", "opts": ["încălzire peste temperatura critică, menținere și răcire cu viteză mai mare decât viteza critică de călire", "încălzire sub Ac1, menținere și răcire lentă, în cuptor", "încălzire peste Ac3, menținere și răcire lentă, în cuptor", "încălzire peste Ac3, menținere și răcire în aer liniștit"], "ok": 0}, {"id": "I2", "sub": "I", "tip": "alegere multiplă", "cat": "obiectiv", "ob": "O1", "bloom": "A-și aminti", "p": 5, "q": "Structura urmărită prin călirea oțelului este:", "opts": ["ferita", "perlita", "martensita", "cementita"], "ok": 2}, {"id": "I3", "sub": "I", "tip": "adevărat/fals", "cat": "obiectiv", "ob": "O2", "bloom": "A înțelege", "p": 5, "q": "Revenirea se execută prin încălzirea piesei călite la o temperatură situată peste Ac3.", "opts": ["Adevărat", "Fals"], "ok": 1}, {"id": "I4", "sub": "I", "tip": "adevărat/fals", "cat": "obiectiv", "ob": "O2", "bloom": "A înțelege", "p": 5, "q": "Revenirea se aplică după călire pentru a reduce tensiunile interne și fragilitatea.", "opts": ["Adevărat", "Fals"], "ok": 0}, {"id": "I5", "sub": "I", "tip": "alegere multiplă", "cat": "obiectiv", "ob": "O2", "bloom": "A înțelege", "p": 5, "q": "Scopul principal al revenirii este:", "opts": ["creșterea durității peste valoarea obținută la călire", "reducerea tensiunilor interne și a fragilității, cu creșterea tenacității", "obținerea unei structuri complet austenitice", "îndepărtarea stratului de oxizi de pe suprafața piesei"], "ok": 1}, {"id": "I6", "sub": "I", "tip": "alegere multiplă", "cat": "obiectiv", "ob": "O4", "bloom": "A aplica", "p": 5, "q": "Pentru călirea unei piese din oțelul aliat 40Cr10, mediul de răcire recomandat este:", "opts": ["apa", "uleiul", "cuptorul", "nisipul"], "ok": 1}, {"id": "I7", "sub": "II", "tip": "asociere", "cat": "obiectiv", "ob": "O5", "bloom": "A-și aminti", "p": 9, "q": "Asociați fiecărui tip de revenire intervalul de temperatură corespunzător (3 puncte pentru fiecare asociere corectă).", "left": ["Revenire joasă", "Revenire medie", "Revenire înaltă"], "right": ["150–250 °C", "350–500 °C", "500–650 °C", "750–850 °C"], "ok": [0, 1, 2]}, {"id": "I8", "sub": "II", "tip": "asociere", "cat": "obiectiv", "ob": "O5", "bloom": "A analiza", "p": 9, "q": "Asociați fiecărei piese călite tipul de revenire potrivit condițiilor ei de lucru (3 puncte pentru fiecare asociere corectă).", "left": ["Burghiu (sculă așchietoare)", "Arc elicoidal", "Arbore de transmisie"], "right": ["Revenire joasă", "Revenire medie", "Revenire înaltă"], "ok": [0, 1, 2]}, {"id": "I9", "sub": "II", "tip": "ordonare", "cat": "obiectiv", "ob": "O1", "bloom": "A înțelege", "p": 6, "q": "Ordonați etapele unui ciclu complet de călire urmată de revenire (1,5 puncte pentru fiecare etapă plasată corect).", "steps": ["Încălzire până la temperatura de austenitizare", "Menținere la temperatura de austenitizare", "Răcire rapidă, în apă sau ulei", "Revenire: reîncălzire sub Ac1, menținere, răcire"]}, {"id": "I10", "sub": "II", "tip": "răspuns scurt (numeric)", "cat": "semiobiectiv", "ob": "O3", "bloom": "A aplica", "p": 6, "q": "Un oțel hipoeutectoid are Ac3 = 790 °C. Stabiliți temperatura de încălzire la călire (o singură valoare, în °C).", "min": 820, "max": 840}, {"id": "I11", "sub": "III", "tip": "eseu structurat", "cat": "subiectiv", "ob": "O6", "bloom": "A evalua", "p": 30, "q": "Un arbore de transmisie din oțel carbon de îmbunătățire OLC 45, solicitat la încovoiere și răsucire variabile, trebuie tratat termic. Se dă Ac3 = 780 °C. Propuneți și argumentați regimul complet de tratament termic: denumirea tratamentului, temperaturile, mediul de răcire, structurile obținute și proprietățile urmărite.", "barem": [{"c": "Denumește tratamentul: îmbunătățire, adică călire urmată de revenire înaltă", "p": 6}, {"c": "Stabilește temperatura de călire în intervalul 810–830 °C (3 p) și o justifică prin regula Ac3 + 30…50 °C (3 p)", "p": 6}, {"c": "Alege apa ca mediu de răcire și o justifică prin viteza critică mare a oțelului carbon nealiat (alegerea uleiului cu argument privind riscul de fisurare la secțiuni mici: 2 p)", "p": 4}, {"c": "Stabilește temperatura de revenire în intervalul 500–650 °C", "p": 6}, {"c": "Numește structurile: martensită după călire și sorbită de revenire după revenire", "p": 4}, {"c": "Argumentează alegerea prin tenacitatea ridicată și rezistența la oboseală cerute de solicitările variabile", "p": 4}]}]}};
+
+/* ---------- utilitare ---------- */
+const $ = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => [...r.querySelectorAll(s)];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const rnd = (a,b,step=1) => a + step*Math.floor(Math.random()*((b-a)/step+1));
+const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+const fmt = n => String(n).replace('.', ',');
+function store(k,v){ try{ localStorage.setItem('iac-cr-'+k, JSON.stringify(v)); }catch(e){} }
+function load(k,d){ try{ const v = localStorage.getItem('iac-cr-'+k); return v ? JSON.parse(v) : d; }catch(e){ return d; } }
+
+/* ---------- audio (stil auditiv) ---------- */
+function speak(text){
+  try{
+    const s = window.speechSynthesis; if(!s){ return false; }
+    s.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'ro-RO';
+    const v = s.getVoices().find(v => v.lang && v.lang.toLowerCase().startsWith('ro'));
+    if (v) u.voice = v;
+    u.rate = 0.95;
+    s.speak(u);
+    return !!v;
+  }catch(e){ return false; }
+}
+function stopSpeak(){ try{ window.speechSynthesis && window.speechSynthesis.cancel(); }catch(e){} }
+function audioBtn(id){ return `<span class="row"><button class="btn ghost" data-say="${id}" type="button">▶ Ascultă</button><button class="btn ghost" data-stop type="button">■ Oprește</button></span>`; }
+const SAY = {};
+
+/* ---------- stare ---------- */
+const S = {
+  step: load('step', 0),
+  vak: load('vak', null),
+  done: load('done', {}),
+  drill: { stats: load('drill', {O3:{ok:0,n:0},O4:{ok:0,n:0},O5:{ok:0,n:0}}), cur:null, i:0, series:[] },
+  testDone: false
+};
+
+/* ---------- etape ---------- */
+const STEPS = [
+  {n:'0', t:'Profil de învățare', c:'#8A97A6'},
+  {n:'1', t:'Captarea atenției', c:'#7A3B1E'},
+  {n:'2', t:'Obiectivele', c:'#9E3F12'},
+  {n:'3', t:'Reactualizarea', c:'#C2410C'},
+  {n:'4', t:'Conținutul nou', c:'#E06A1B'},
+  {n:'5', t:'Dirijarea învățării', c:'#F29A2E'},
+  {n:'6', t:'Exersare', c:'#D9B44A'},
+  {n:'7', t:'Feedback', c:'#8C6BB1'},
+  {n:'8', t:'Evaluare', c:'#4F6FA8'},
+  {n:'9', t:'Retenție și transfer', c:'#2D5B8A'}
+];
+
+function renderRail(){
+  $('#rail').innerHTML = STEPS.map((s,i)=>`<li><button type="button" data-go="${i}" style="--c:${s.c}" class="${S.done[i]?'done':''}" ${i===S.step?'aria-current="step"':''}><span class="n">${s.n}</span>${esc(s.t)}</button></li>`).join('');
+}
+function go(i){
+  stopSpeak();
+  S.done[S.step] = true; store('done', S.done);
+  S.step = Math.max(0, Math.min(STEPS.length-1, i)); store('step', S.step);
+  render();
+  const p = $('#panel'); p.focus({preventScroll:true});
+  p.scrollIntoView({block:'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto':'smooth'});
+}
+function nav(){
+  const prev = S.step>0 ? `<button class="btn ghost" type="button" data-go="${S.step-1}">← ${esc(STEPS[S.step-1].t)}</button>` : '<span></span>';
+  const next = S.step<STEPS.length-1 ? `<button class="btn" type="button" data-go="${S.step+1}">${esc(STEPS[S.step+1].t)} →</button>` : '';
+  return `<div class="navrow">${prev}${next}</div>`;
+}
+function head(ev, title){ return `<p class="phase">${ev}</p><h2>${title}</h2>`; }
+function vakChips(list){ return list.map(x=>`<span class="chip ${x}">${({V:'vizual',A:'auditiv',K:'kinestezic'})[x]}</span>`).join(' ') + ' <span class="chip rec">recomandat pentru profilul tău</span>'; }
+
+/* ---------- 0. VAK ---------- */
+const VAKQ = [
+  ['Când învăț cum funcționează un utilaj, prefer:', 'să văd o schemă sau un desen', 'să ascult explicația cuiva', 'să încerc eu, pas cu pas'],
+  ['Îmi amintesc cel mai ușor:', 'imaginile, culorile și schemele', 'ce am auzit sau am discutat', 'ce am făcut cu mâinile'],
+  ['Când primesc o instrucțiune nouă:', 'mă uit întâi la figuri', 'o citesc cu voce tare sau o discut', 'trec direct la încercare'],
+  ['Când îi explic cuiva un drum:', 'îi desenez o hartă', 'îi spun în cuvinte pe unde să meargă', 'îl însoțesc sau îi arăt cu mâna'],
+  ['Înaintea unui test învăț cel mai bine:', 'din scheme și tabele', 'repetând cu voce tare', 'rezolvând exerciții'],
+  ['La un laborator mă ajută cel mai mult:', 'fișa cu diagrama procesului', 'explicația profesorului', 'manevrarea aparatelor']
+];
+function stepVAK(){
+  return head('Înaintea lecției', 'Cum înveți cel mai ușor?') + `
+  <p class="lead">Răspunde la șase întrebări scurte. Aplicația va marca resursele potrivite stilului tău dominant: <b>vizual</b>, <b>auditiv</b> sau <b>kinestezic</b> (modelul VAK).</p>
+  <p class="callout t small">Chestionarul este orientativ și a fost construit pentru această aplicație. Nu este un instrument psihologic standardizat. Toate resursele rămân disponibile pentru toți elevii, iar combinarea lor este recomandată.</p>
+  <form id="vakf">${VAKQ.map((q,i)=>`<div class="q"><div class="qt">${i+1}. ${esc(q[0])}</div><div class="opts">${['V','A','K'].map((k,j)=>`<label class="opt"><input type="radio" name="v${i}" id="v${i}${k}" value="${k}" ${S.vak&&S.vak.ans&&S.vak.ans[i]===k?'checked':''}><span>${esc(q[j+1])}</span></label>`).join('')}</div></div>`).join('')}
+  <div class="row"><button class="btn heat" type="submit">Află profilul</button><span id="vakmsg" class="muted small"></span></div></form>
+  <div id="vakres">${S.vak?vakResult():''}</div>` + nav();
+}
+function vakResult(){
+  const v = S.vak, tot = v.V+v.A+v.K;
+  const names = {V:'vizual',A:'auditiv',K:'kinestezic'};
+  const max = Math.max(v.V,v.A,v.K);
+  const dom = ['V','A','K'].filter(k=>v[k]===max);
+  return `<h3>Rezultat</h3><div class="kpis">${['V','A','K'].map(k=>`<div class="kpi"><div class="k">${names[k]}</div><div class="v">${v[k]} / ${tot}</div></div>`).join('')}</div>
+  <p>Stil dominant: <b>${dom.map(k=>names[k]).join(' și ')}</b>. În lecție, resursele potrivite sunt încadrate și au eticheta „recomandat pentru profilul tău”.</p>`;
+}
+function bindVAK(){
+  $('#vakf').addEventListener('submit', e=>{
+    e.preventDefault();
+    const ans = VAKQ.map((_,i)=>{ const r = $(`input[name=v${i}]:checked`); return r?r.value:null; });
+    if (ans.includes(null)){ $('#vakmsg').textContent = 'Răspunde la toate cele șase întrebări.'; return; }
+    const v = {V:0,A:0,K:0,ans}; ans.forEach(a=>v[a]++);
+    S.vak = v; store('vak', v); applyVAK();
+    $('#vakmsg').textContent = '';
+    $('#vakres').innerHTML = vakResult();
+  });
+}
+function applyVAK(){
+  document.body.classList.remove('pref-V','pref-A','pref-K');
+  if(!S.vak){ $('#vakbadge').innerHTML = 'Profil VAK: <b>necompletat</b>'; return; }
+  const max = Math.max(S.vak.V,S.vak.A,S.vak.K);
+  const dom = ['V','A','K'].filter(k=>S.vak[k]===max);
+  dom.forEach(k=>document.body.classList.add('pref-'+k));
+  $('#vakbadge').innerHTML = 'Profil VAK: <b>' + dom.map(k=>({V:'vizual',A:'auditiv',K:'kinestezic'})[k]).join(' + ') + '</b>';
+}
+
+/* ---------- 1. Captarea atenției ---------- */
+function stepE1(){
+  SAY.e1 = 'Trei dălți au fost confecționate din aceeași bară de oțel. Prima s-a îndoit la prima lovitură. A doua s-a ciobit și a crăpat. A treia a lucrat o zi întreagă fără probleme. Materialul este același. Ce le face atât de diferite? Răspunsul stă în modul în care au fost încălzite și răcite.';
+  return head('Evenimentul 1 · Captarea atenției', 'Trei dălți din aceeași bară de oțel') + `
+  <div class="grid2">
+    <div>
+      <p class="lead">Trei dălți au fost forjate din <b>aceeași bară de oțel</b>. Prima s-a <b>îndoit</b> la prima lovitură. A doua s-a <b>ciobit și a crăpat</b>. A treia a lucrat o zi întreagă fără probleme.</p>
+      <p>Compoziția chimică este identică. Diferența a apărut în atelier: <b>cum au fost încălzite și cum au fost răcite</b>.</p>
+      <div class="res A box"><div class="reshead">${vakChips(['A'])}</div>${audioBtn('e1')}<p class="small muted" id="audiomsg"></p></div>
+    </div>
+    <div class="res V box"><div class="reshead">${vakChips(['V'])}</div>${chiselSVG()}</div>
+  </div>
+  <div class="q res K" style="margin-top:18px"><div class="reshead">${vakChips(['K'])}</div>
+    <div class="qt">Ce crezi că s-a întâmplat cu fiecare daltă? Formulează o ipoteză.</div>
+    <div class="opts" id="e1opts">
+      ${[['Dalta 1 nu a fost călită: oțelul a rămas moale.','ok'],['Dalta 2 a fost călită, dar nu a fost revenită: martensita a rămas dură și fragilă.','ok'],['Dalta 3 a fost călită și apoi revenită: duritate mare, cu tenacitate suficientă.','ok'],['Toate trei au fost tratate identic; diferența vine din forjare.','bad']].map((o,i)=>`<label class="opt"><input type="checkbox" id="e1o${i}" data-k="${o[1]}"><span>${esc(o[0])}</span></label>`).join('')}
+    </div>
+    <div class="row" style="margin-top:10px"><button class="btn" type="button" id="e1check">Verifică ipoteza</button></div>
+    <div id="e1fb"></div>
+  </div>` + nav();
+}
+function chiselSVG(){
+  const d = (x,col,crack,bent) => `<g transform="translate(${x},20)">
+    <rect x="18" y="0" width="24" height="96" rx="3" fill="var(--line)"/>
+    ${bent ? `<path d="M22 96 L22 150 Q22 172 44 178 L50 172 Q34 166 38 150 L38 96 Z" fill="${col}"/>`
+           : `<path d="M22 96 L38 96 L38 160 L30 184 L22 160 Z" fill="${col}"/>`}
+    ${crack ? `<path d="M28 168 L33 176 L27 181" stroke="var(--bad)" stroke-width="2.5" fill="none"/>` : ''}
+  </g>`;
+  return `<svg class="diagram" viewBox="0 0 300 250" role="img" aria-label="Trei dălți: una îndoită, una fisurată, una intactă">
+    ${d(15,'#9AA5B1',false,true)}${d(115,'#C9CED4',true,false)}${d(215,'#5D86B5',false,false)}
+    <text x="45" y="232" text-anchor="middle" class="lbl" font-size="12">1 · îndoită</text>
+    <text x="145" y="232" text-anchor="middle" class="lbl" font-size="12">2 · fisurată</text>
+    <text x="245" y="232" text-anchor="middle" class="lbl" font-size="12">3 · intactă</text>
+  </svg>`;
+}
+function bindE1(){
+  $('#e1check').addEventListener('click', ()=>{
+    const boxes = $$('#e1opts input');
+    let good = true;
+    boxes.forEach(b=>{ const o = b.closest('.opt'); o.classList.remove('ok','bad');
+      const should = b.dataset.k==='ok'; if (b.checked!==should) good=false;
+      if (b.checked) o.classList.add(should?'ok':'bad'); else if (should) o.classList.add('ok'); });
+    $('#e1fb').innerHTML = `<div class="fb ${good?'ok':'warn'}">${good?'Ipoteză corectă.':'Ipoteza corectă este marcată cu verde.'} Lecția de azi explică <b>de ce</b>: ce se întâmplă în oțel la călire și de ce revenirea este obligatorie după ea.</div>`;
+  });
+}
+
+/* ---------- 2. Obiective ---------- */
+function stepE2(){
+  return head('Evenimentul 2 · Informarea asupra obiectivelor', 'La sfârșitul lecției vei fi capabil…') + `
+  <p class="muted small">Obiectivele sunt formulate după metoda lui R. F. Mager: <b>performanța</b> observabilă, <b>condițiile</b> în care se realizează și <b>criteriul</b> de reușită. Eticheta arată nivelul cognitiv din taxonomia lui Bloom (revizuită de Anderson și Krathwohl, 2001).</p>
+  <div class="tbl"><table><thead><tr><th>Cod</th><th>Nivel Bloom</th><th>Performanța</th><th>Condițiile</th><th>Criteriul de reușită</th></tr></thead><tbody>
+  ${C.obiective.map(o=>`<tr><td class="num">${o.id}</td><td>${esc(o.bloom)}</td><td>${esc(o.performanta)}</td><td>${esc(o.conditii)}</td><td>${esc(o.criteriu)}</td></tr>`).join('')}
+  </tbody></table></div>` + nav();
+}
+
+/* ---------- 3. Reactualizare ---------- */
+function stepE3(){
+  return head('Evenimentul 3 · Reactualizarea cunoștințelor anterioare', 'Ce știi deja despre diagrama Fe–Fe₃C') + `
+  <p>Călirea pornește de la austenită. Verifică întâi noțiunile din lecțiile anterioare. Fiecare răspuns primește imediat o explicație.</p>
+  ${C.reactualizare.map((q,i)=>`<div class="q" data-r="${i}"><div class="qt">${i+1}. ${esc(q.q)}</div><div class="opts">${q.opts.map((o,j)=>`<label class="opt"><input type="radio" name="r${i}" id="r${i}_${j}" value="${j}"><span>${esc(o)}</span></label>`).join('')}</div><div class="fbx"></div></div>`).join('')}` + nav();
+}
+function bindE3(){
+  $$('[data-r]').forEach(box=>{
+    const i = +box.dataset.r, q = C.reactualizare[i];
+    box.addEventListener('change', e=>{
+      const v = +e.target.value;
+      $$('.opt', box).forEach((o,j)=>{ o.classList.remove('ok','bad'); if (j===q.ok) o.classList.add('ok'); else if (j===v) o.classList.add('bad'); });
+      $('.fbx', box).innerHTML = `<div class="fb ${v===q.ok?'ok':'bad'}">${v===q.ok?'Corect.':'Nu este corect.'} ${esc(q.fb)}</div>`;
+    });
+  });
+}
+
+/* ---------- diagrame ---------- */
+function cycleSVG(opts){
+  // opts: {Ttarget, lines:[{T,label}], cool:'apa'|'ulei'|'aer'|'cuptor', temper:T|null, w,h}
+  const W=560,H=300, L=52, R=16, T=28, B=40;
+  const y = t => T + (H-T-B)*(1 - t/1000);
+  const x = u => L + (W-L-R)*(u/12);
+  const coolEnd = {apa:0.35, ulei:0.9, aer:2.4, cuptor:4.2}[opts.cool||'apa'];
+  const tt = opts.Ttarget;
+  let p = `M${x(0)} ${y(20)} L${x(2.6)} ${y(tt)} L${x(4.4)} ${y(tt)} L${x(4.4+coolEnd)} ${y(20)}`;
+  let te = 4.4+coolEnd;
+  if (opts.temper){ p += ` L${x(te+0.8)} ${y(20)} L${x(te+2.2)} ${y(opts.temper)} L${x(te+4)} ${y(opts.temper)} L${x(Math.min(12,te+4.8))} ${y(20)}`; }
+  const grid = [0,200,400,600,800,1000].map(t=>`<line x1="${L}" x2="${W-R}" y1="${y(t)}" y2="${y(t)}" stroke="var(--line)" stroke-width="1"/><text x="${L-6}" y="${y(t)+4}" text-anchor="end" font-size="11">${t}</text>`).join('');
+  const lines = (opts.lines||[]).map((l,i)=>`<line x1="${L}" x2="${W-R}" y1="${y(l.T)}" y2="${y(l.T)}" stroke="var(--temper)" stroke-dasharray="5 4" stroke-width="1.5"/><text x="${W-R-4-i*118}" y="${y(l.T)+(i===0?14:-5)}" text-anchor="end" font-size="11" fill="var(--temper)">${esc(l.label)} = ${l.T} °C</text>`).join('');
+  const lab = (u,t,s,anchor='middle') => `<text x="${x(u)}" y="${y(t)}" text-anchor="${anchor}" font-size="11" class="lbl">${s}</text>`;
+  return `<svg class="diagram" viewBox="0 0 ${W} ${H}" role="img" aria-label="Diagrama temperatură–timp a ciclului de tratament termic">
+    ${grid}
+    <line x1="${L}" x2="${L}" y1="${T}" y2="${H-B}" stroke="var(--muted)"/><line x1="${L}" x2="${W-R}" y1="${H-B}" y2="${H-B}" stroke="var(--muted)"/>
+    <text x="${L}" y="14" text-anchor="middle" font-size="11">°C</text><text x="${W-R}" y="${H-12}" text-anchor="end" font-size="11">timp →</text>
+    ${lines}
+    <path d="${p}" fill="none" stroke="var(--heat)" stroke-width="3" stroke-linejoin="round"/>
+    ${lab(1.75, tt*0.45, 'încălzire', 'start')}
+    ${lab(3.5, Math.min(985, tt+30), `menținere · ${tt} °C`)}
+    ${lab(4.4+coolEnd/2+0.9, Math.max(80, tt*0.35), 'răcire')}
+    ${opts.temper ? lab(te+3.1, opts.temper+30, `revenire · ${opts.temper} °C`) : ''}
+  </svg>`;
+}
+function temperSVG(){
+  const W=560,H=150,L=20,R=20;
+  const x = t => L + (W-L-R)*((t-100)/600);
+  const zones = [[150,250,'#E8C27A','joasă'],[350,500,'#B07AB8','medie'],[500,650,'#5D86B5','înaltă']];
+  return `<svg class="diagram" viewBox="0 0 ${W} ${H}" role="img" aria-label="Domeniile de temperatură ale revenirii">
+    <defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="var(--bad)" stroke-width="2"/></pattern></defs>
+    <rect x="${x(100)}" y="40" width="${x(700)-x(100)}" height="36" fill="var(--sunk)" stroke="var(--line)"/>
+    ${zones.map(z=>`<rect x="${x(z[0])}" y="40" width="${x(z[1])-x(z[0])}" height="36" fill="${z[2]}"/><text x="${(x(z[0])+x(z[1]))/2}" y="30" text-anchor="middle" font-size="12" class="lbl">${z[3]}</text>`).join('')}
+    <rect x="${x(250)}" y="40" width="${x(350)-x(250)}" height="36" fill="url(#hatch)" opacity=".55"/>
+    <text x="${(x(250)+x(350))/2}" y="96" text-anchor="middle" font-size="11" fill="var(--bad)">evitat</text>
+    ${[100,200,300,400,500,600,700].map(t=>`<line x1="${x(t)}" x2="${x(t)}" y1="76" y2="82" stroke="var(--muted)"/><text x="${x(t)}" y="${t===300?112:96}" text-anchor="middle" font-size="11">${t}</text>`).join('')}
+    <text x="${W-R}" y="135" text-anchor="end" font-size="11">temperatura de revenire, °C</text>
+  </svg>`;
+}
+
+/* ---------- 4. Conținut ---------- */
+let tab4 = 'calire';
+function stepE4(){
+  SAY.cal = 'Călirea este tratamentul termic prin care oțelul este încălzit peste temperatura critică, până când structura devine austenită. Piesa este menținută la această temperatură, apoi este răcită cu o viteză mai mare decât viteza critică de călire. Rezultă martensita, o structură foarte dură, dar fragilă și cu tensiuni interne mari. Oțelurile hipoeutectoide se încălzesc cu treizeci până la cincizeci de grade peste A c trei. Oțelurile hipereutectoide se încălzesc cu treizeci până la cincizeci de grade peste A c unu. Oțelurile carbon nealiate se răcesc de regulă în apă, iar oțelurile aliate în ulei.';
+  SAY.rev = 'Revenirea se aplică obligatoriu după călire. Piesa călită este reîncălzită la o temperatură sub A c unu, menținută și apoi răcită. Revenirea reduce tensiunile interne și fragilitatea și crește tenacitatea, dar duritatea scade. Revenirea joasă, între o sută cincizeci și două sute cincizeci de grade, se aplică sculelor. Revenirea medie, între trei sute cincizeci și cinci sute de grade, se aplică arcurilor. Revenirea înaltă, între cinci sute și șase sute cincizeci de grade, se aplică pieselor solicitate la șoc și la oboseală, cum sunt arborii. Călirea urmată de revenire înaltă se numește îmbunătățire.';
+  const cal = `
+    <div class="grid2">
+      <div>
+        <div class="res A box" style="margin-bottom:14px"><div class="reshead">${vakChips(['A'])}</div>${audioBtn('cal')}</div>
+        <p><b>Călirea</b> este tratamentul termic care constă în <b>încălzirea</b> oțelului peste temperatura critică, pentru austenitizare, <b>menținerea</b> la această temperatură și <b>răcirea</b> cu o viteză mai mare decât <b>viteza critică de călire</b>.</p>
+        <p>Rezultatul este <b>martensita</b>, o soluție solidă suprasaturată de carbon în fier α. Martensita este foarte dură, dar fragilă și are tensiuni interne mari.</p>
+        <h3>Temperatura de încălzire</h3>
+        <div class="tbl"><table><thead><tr><th>Oțel</th><th>Temperatura de călire</th><th>De ce</th></tr></thead><tbody>
+          <tr><td>hipoeutectoid (&lt; 0,77 % C)</td><td class="num">Ac3 + 30…50 °C</td><td>austenitizare completă; sub Ac3 ar rămâne ferită moale</td></tr>
+          <tr><td>hipereutectoid (&gt; 0,77 % C)</td><td class="num">Ac1 + 30…50 °C</td><td>cementita secundară nedizolvată crește rezistența la uzură; peste Acm grăuntele crește și rămâne multă austenită reziduală</td></tr>
+        </tbody></table></div>
+        <h3>Mediul de răcire</h3>
+        <div class="tbl"><table><thead><tr><th>Mediu</th><th>Viteză</th><th>Se folosește pentru</th></tr></thead><tbody>
+          <tr><td>apă</td><td>mare</td><td>oțeluri carbon nealiate (viteză critică mare); risc mai mare de deformare și fisurare</td></tr>
+          <tr><td>ulei</td><td>moderată</td><td>oțeluri aliate (viteză critică mai mică); tensiuni mai mici</td></tr>
+          <tr><td>aer</td><td>mică</td><td>doar oțeluri înalt aliate autocălibile; la oțelurile obișnuite înseamnă normalizare, nu călire</td></tr>
+        </tbody></table></div>
+      </div>
+      <div class="res V box"><div class="reshead">${vakChips(['V'])}</div>
+        ${cycleSVG({Ttarget:820, lines:[{T:727,label:'Ac1'},{T:780,label:'Ac3'}], cool:'apa', temper:null})}
+        <p class="small muted">Ciclul de călire pentru un oțel hipoeutectoid cu Ac3 = 780 °C: încălzire la 820 °C (Ac3 + 40 °C), menținere, răcire rapidă în apă. Valorile Ac sunt date ca exemplu.</p>
+      </div>
+    </div>`;
+  const rev = `
+    <div class="grid2">
+      <div>
+        <div class="res A box" style="margin-bottom:14px"><div class="reshead">${vakChips(['A'])}</div>${audioBtn('rev')}</div>
+        <p><b>Revenirea</b> se aplică <b>obligatoriu după călire</b>. Piesa călită se reîncălzește la o temperatură <b>sub Ac1</b>, se menține și se răcește. Revenirea reduce tensiunile interne și fragilitatea și crește tenacitatea. Duritatea scade cu atât mai mult cu cât temperatura de revenire este mai mare.</p>
+        <div class="tbl"><table><thead><tr><th>Tip</th><th class="num">Interval</th><th>Structura</th><th>Piese tipice</th></tr></thead><tbody>
+          <tr><td><span class="zone" style="background:#E8C27A"></span>joasă</td><td class="num">150–250 °C</td><td>martensită de revenire</td><td>scule așchietoare, calibre: duritate maximă</td></tr>
+          <tr><td><span class="zone" style="background:#B07AB8"></span>medie</td><td class="num">350–500 °C</td><td>troostită de revenire</td><td>arcuri, piese elastice: limită de elasticitate ridicată</td></tr>
+          <tr><td><span class="zone" style="background:#5D86B5"></span>înaltă</td><td class="num">500–650 °C</td><td>sorbită de revenire</td><td>arbori, biele: tenacitate și rezistență la oboseală</td></tr>
+        </tbody></table></div>
+        <p class="callout small"><b>Îmbunătățirea</b> este călirea urmată de revenire înaltă. Intervalul de aproximativ 250–350 °C se evită de regulă, din cauza fragilității de revenire ireversibile (de speța I).</p>
+      </div>
+      <div class="res V box"><div class="reshead">${vakChips(['V'])}</div>${temperSVG()}
+        ${cycleSVG({Ttarget:820, lines:[{T:727,label:'Ac1'}], cool:'apa', temper:600})}
+        <p class="small muted">Sus: domeniile revenirii. Jos: ciclul complet de îmbunătățire (călire, apoi revenire înaltă la 600 °C).</p>
+      </div>
+    </div>`;
+  return head('Evenimentul 4 · Prezentarea conținutului', 'Călirea și revenirea oțelului') + `
+  <div class="tabs" role="tablist"><button role="tab" type="button" id="tab-calire" aria-selected="${tab4==='calire'}" data-tab="calire">Călirea</button><button role="tab" type="button" id="tab-revenire" aria-selected="${tab4==='revenire'}" data-tab="revenire">Revenirea</button></div>
+  <div role="tabpanel">${tab4==='calire'?cal:rev}</div>
+  <p class="muted small">Pentru stilul kinestezic: laboratorul virtual din etapa următoare îți permite să alegi singur temperatura și mediul de răcire.</p>` + nav();
+}
+function bindE4(){ $$('[data-tab]').forEach(b=>b.addEventListener('click',()=>{ tab4=b.dataset.tab; render(); })); }
+
+/* ---------- 5. Dirijarea învățării: laborator virtual ---------- */
+const STEELS = {
+  A:{nume:'Oțel A · OLC 45, carbon nealiat, hipoeutectoid', tip:'hipo', aliat:false, Ac1:730, Ac3:780},
+  B:{nume:'Oțel B · 40Cr10, aliat, hipoeutectoid', tip:'hipo', aliat:true, Ac1:740, Ac3:790},
+  C:{nume:'Oțel C · OSC 10, carbon de scule, hipereutectoid', tip:'hiper', aliat:false, Ac1:730, Acm:800}
+};
+const sim = {steel:'A', T:740, med:'apa', Tr:200};
+function evalQuench(){
+  const s = STEELS[sim.steel], T = sim.T, m = sim.med;
+  const base = s.tip==='hipo' ? s.Ac3 : s.Ac1;
+  const lo = base+30, hi = base+50;
+  let heat, hv;
+  if (T < s.Ac1){ heat = `Sub Ac1 (${s.Ac1} °C) nu apare austenită. Structura inițială rămâne neschimbată, deci piesa <b>nu se călește</b>.`; hv='bad'; }
+  else if (s.tip==='hipo' && T < s.Ac3){ heat = `Între Ac1 și Ac3 austenitizarea este incompletă și rămâne ferită. După răcire rapidă rezultă martensită + ferită, cu duritate scăzută și neuniformă: <b>călire incompletă</b>.`; hv='bad'; }
+  else if (T < lo){ heat = `Temperatura este peste punctul critic, dar sub intervalul recomandat (${lo}–${hi} °C). Austenita poate rămâne neomogenă. Mărește puțin temperatura.`; hv='warn'; }
+  else if (T <= hi){ heat = s.tip==='hipo' ? `Corect: ${T} °C este în intervalul Ac3 + 30…50 °C = ${lo}–${hi} °C. Structura este complet austenitică.` : `Corect: ${T} °C este în intervalul Ac1 + 30…50 °C = ${lo}–${hi} °C. Rezultă austenită + cementită secundară nedizolvată, care după călire dă martensită + carburi, cu rezistență mare la uzură.`; hv='ok'; }
+  else if (s.tip==='hiper' && T >= s.Acm){ heat = `Peste Acm (${s.Acm} °C) cementita se dizolvă complet, grăuntele crește, iar după călire rămâne multă austenită reziduală: duritatea scade și fragilitatea crește. <b>Nu se recomandă.</b>`; hv='bad'; }
+  else { heat = `Peste intervalul recomandat (${lo}–${hi} °C): <b>supraîncălzire</b>. Grăuntele austenitic crește, martensita rezultă grosolană, iar fragilitatea și riscul de fisurare cresc.`; hv = 'bad'; }
+  let cool, cv;
+  if (T < s.Ac1){ cool = 'Fără austenită, mediul de răcire nu mai contează pentru călire.'; cv='bad'; }
+  else if (m==='cuptor'){ cool = 'Răcirea lentă, în cuptor, produce perlită. Acesta este un regim de <b>recoacere</b>, nu de călire.'; cv='bad'; }
+  else if (m==='aer'){ cool = 'Răcirea în aer liniștit produce o structură perlitică fină. Acesta este un regim de <b>normalizare</b>, nu de călire.'; cv='bad'; }
+  else if (m==='apa' && !s.aliat){ cool = 'Apa asigură o viteză mai mare decât viteza critică de călire a oțelului carbon: rezultă <b>martensită</b>.'; cv='ok'; }
+  else if (m==='apa' && s.aliat){ cool = 'Rezultă martensită, dar răcirea în apă a unui oțel aliat produce tensiuni mari, cu risc ridicat de <b>fisurare și deformare</b>. Mediul recomandat este uleiul.'; cv='warn'; }
+  else if (m==='ulei' && s.aliat){ cool = 'Uleiul este suficient pentru viteza critică mai mică a oțelului aliat și limitează tensiunile: rezultă <b>martensită</b>.'; cv='ok'; }
+  else { cool = 'Pentru oțelul carbon nealiat, uleiul poate răci prea lent, mai ales la secțiuni mari. Rezultă structuri intermediare alături de martensită: <b>călire incompletă</b>. Mediul recomandat este apa.'; cv='warn'; }
+  const all = (hv==='ok' && cv==='ok') ? 'ok' : (hv==='bad'||cv==='bad') ? 'bad' : 'warn';
+  return {heat,hv,cool,cv,all,lo,hi};
+}
+function evalTemper(T){
+  if (T < 150) return {t:'sub domeniul uzual', s:'efect redus asupra tensiunilor interne', a:'insuficient pentru majoritatea pieselor', v:'warn'};
+  if (T <= 250) return {t:'revenire joasă', s:'martensită de revenire', a:'scule așchietoare, calibre: duritate maximă', v:'ok'};
+  if (T < 350) return {t:'zonă evitată', s:'risc de fragilitate de revenire ireversibilă (de speța I)', a:'se evită de regulă', v:'bad'};
+  if (T < 500) return {t:'revenire medie', s:'troostită de revenire', a:'arcuri, piese elastice', v:'ok'};
+  if (T <= 650) return {t:'revenire înaltă', s:'sorbită de revenire', a:'arbori, biele: tenacitate și rezistență la oboseală', v:'ok'};
+  return {t:'peste domeniul uzual', s:'temperatura se apropie de Ac1; efectul călirii se pierde aproape complet', a:'nu se recomandă', v:'bad'};
+}
+function stepE5(){
+  return head('Evenimentul 5 · Dirijarea învățării', 'Laborator virtual de tratamente termice') + `
+  <div class="callout t"><b>Sarcini dirijate.</b> Rezolvă-le în ordine, folosind simulatorul de mai jos.
+    <ol class="small" style="margin:6px 0 0;padding-left:20px">
+      <li>Pentru <b>Oțelul A</b>, găsește o temperatură de călire corectă și mediul potrivit. Indicație: Ac3 + 30…50 °C.</li>
+      <li>Alege <b>Oțelul B</b> și răcește-l în apă, apoi în ulei. Ce diferență observi?</li>
+      <li>Pentru <b>Oțelul C</b> (hipereutectoid), compară 770 °C cu 820 °C. De ce nu se încălzește peste Acm?</li>
+      <li>În simulatorul de revenire, găsește temperatura potrivită pentru un <b>arc</b>.</li>
+    </ol></div>
+  <div class="res K" style="margin-top:16px"><div class="reshead">${vakChips(['K','V'])}</div>
+  <h3>1. Simulatorul de călire</h3>
+  <div class="sim">
+    <div class="box">
+      <div class="field"><label for="simsteel">Oțelul</label><select id="simsteel">${Object.entries(STEELS).map(([k,s])=>`<option value="${k}" ${sim.steel===k?'selected':''}>${esc(s.nume)}</option>`).join('')}</select><span class="small muted" id="simcrit"></span></div>
+      <div class="field"><label for="simT">Temperatura de încălzire</label><div class="readout" id="simTv">${sim.T} °C</div><input type="range" id="simT" min="650" max="1000" step="5" value="${sim.T}"></div>
+      <div class="field"><label>Mediul de răcire</label><div class="seg">${[['apa','apă'],['ulei','ulei'],['aer','aer'],['cuptor','cuptor']].map(([v,l])=>`<label><input type="radio" name="simmed" id="simmed-${v}" value="${v}" ${sim.med===v?'checked':''}>${l}</label>`).join('')}</div></div>
+    </div>
+    <div><div id="simdiag"></div><div id="simout"></div></div>
+  </div>
+  <h3>2. Simulatorul de revenire</h3>
+  <div class="sim">
+    <div class="box">
+      <div class="field"><label for="simTr">Temperatura de revenire</label><div class="readout" id="simTrv">${sim.Tr} °C</div><input type="range" id="simTr" min="100" max="700" step="10" value="${sim.Tr}"></div>
+      <div class="field"><span class="small muted">Duritate (calitativ)</span><div class="bar"><i id="barH"></i></div></div>
+      <div class="field"><span class="small muted">Tenacitate (calitativ)</span><div class="bar t"><i id="barK"></i></div></div>
+      <p class="small muted">Barele arată doar tendința: duritatea scade, iar tenacitatea crește odată cu temperatura de revenire. Nu sunt valori măsurate.</p>
+    </div>
+    <div id="revout"></div>
+  </div>
+  </div>
+  <h3>Exemplu rezolvat</h3>
+  <div class="box">
+    <p><b>Problema.</b> O pârghie din oțel aliat 40Cr10, solicitată la șoc, trebuie tratată termic. Se dă Ac3 = 790 °C.</p>
+    <ol>
+      <li><b>Tipul oțelului.</b> Are aproximativ 0,40 % C, deci este hipoeutectoid. Temperatura de călire se raportează la Ac3.</li>
+      <li><b>Temperatura de călire.</b> Ac3 + 30…50 °C = 820…840 °C. Alegem 830 °C.</li>
+      <li><b>Mediul de răcire.</b> Oțelul este aliat, deci are o viteză critică mai mică. Alegem uleiul, care limitează tensiunile și riscul de fisurare.</li>
+      <li><b>Revenirea.</b> Solicitarea la șoc cere tenacitate, deci revenire înaltă, la 500…650 °C. Structura finală este sorbita de revenire.</li>
+      <li><b>Concluzie.</b> Regimul este o <b>îmbunătățire</b>: călire la 830 °C în ulei, urmată de revenire înaltă.</li>
+    </ol>
+  </div>` + nav();
+}
+function updateSim(){
+  const s = STEELS[sim.steel];
+  $('#simTv').textContent = sim.T + ' °C';
+  $('#simcrit').textContent = s.tip==='hipo' ? `Ac1 = ${s.Ac1} °C · Ac3 = ${s.Ac3} °C (valori date pentru exercițiu)` : `Ac1 = ${s.Ac1} °C · Acm = ${s.Acm} °C (valori date pentru exercițiu)`;
+  const r = evalQuench();
+  const lines = s.tip==='hipo' ? [{T:s.Ac1,label:'Ac1'},{T:s.Ac3,label:'Ac3'}] : [{T:s.Ac1,label:'Ac1'},{T:s.Acm,label:'Acm'}];
+  $('#simdiag').innerHTML = cycleSVG({Ttarget:sim.T, lines, cool:sim.med, temper:null});
+  const vlab = {ok:'regim corect de călire', warn:'regim discutabil', bad:'nu este o călire corectă'};
+  $('#simout').innerHTML = `<p><span class="verdict ${r.all}">${vlab[r.all]}</span></p>
+    <div class="fb ${r.hv==='ok'?'ok':r.hv==='warn'?'warn':'bad'}"><b>Încălzirea.</b> ${r.heat}</div>
+    <div class="fb ${r.cv==='ok'?'ok':r.cv==='warn'?'warn':'bad'}"><b>Răcirea.</b> ${r.cool}</div>`;
+}
+function updateRev(){
+  const T = sim.Tr, r = evalTemper(T);
+  $('#simTrv').textContent = T + ' °C';
+  const h = Math.round(100 - (T-100)/600*72), k = Math.round(22 + (T-100)/600*72);
+  $('#barH').style.width = h+'%'; $('#barK').style.width = k+'%';
+  const vlab = {ok:r.t, warn:r.t, bad:r.t};
+  $('#revout').innerHTML = `<p><span class="verdict ${r.v}">${vlab[r.v]}</span></p>
+    <div class="tbl"><table><tbody><tr><th>Structura</th><td>${esc(r.s)}</td></tr><tr><th>Aplicații</th><td>${esc(r.a)}</td></tr></tbody></table></div>
+    ${cycleSVG({Ttarget:820, lines:[{T:727,label:'Ac1'}], cool:'apa', temper:T})}`;
+}
+function bindE5(){
+  $('#simsteel').addEventListener('change', e=>{ sim.steel = e.target.value; updateSim(); });
+  $('#simT').addEventListener('input', e=>{ sim.T = +e.target.value; updateSim(); });
+  $$('input[name=simmed]').forEach(r=>r.addEventListener('change', e=>{ sim.med = e.target.value; updateSim(); }));
+  $('#simTr').addEventListener('input', e=>{ sim.Tr = +e.target.value; updateRev(); });
+  updateSim(); updateRev();
+}
+
+/* ---------- 6. Exersare (drill and practice) ---------- */
+const PIECES = {
+  'joasă':['Burghiu','Freză','Tarod','Calibru tampon'],
+  'medie':['Arc elicoidal','Arc lamelar','Lamelă elastică'],
+  'înaltă':['Arbore cotit','Bielă','Arbore de transmisie']
+};
+const STEEL_C = {apa:['OLC 35','OLC 45','OLC 60'], ulei:['40Cr10','42MoCr11']};
+function genItem(){
+  const type = pick(['A','A','B','C','D']);
+  if (type==='A'){
+    const hipo = Math.random()<0.6;
+    const Ac = hipo ? rnd(760,820,5) : rnd(725,760,5);
+    return {ob:'O3', kind:'num', hipo, Ac,
+      q: hipo ? `Un oțel <b>hipoeutectoid</b> are Ac3 = ${Ac} °C. Ce temperatură de încălzire la călire alegi (°C)?`
+              : `Un oțel <b>hipereutectoid</b> are Ac1 = ${Ac} °C. Ce temperatură de încălzire la călire alegi (°C)?`,
+      lo: Ac+30, hi: Ac+50,
+      ex: hipo ? `Regula: Ac3 + 30…50 °C = ${Ac+30}–${Ac+50} °C. Sub Ac3 ar rămâne ferită netransformată.`
+               : `Regula: Ac1 + 30…50 °C = ${Ac+30}–${Ac+50} °C. Cementita secundară rămâne nedizolvată și crește rezistența la uzură.`};
+  }
+  if (type==='B'){
+    const zone = pick(['joasă','medie','înaltă']);
+    const T = zone==='joasă' ? pick([160,180,200,220,240]) : zone==='medie' ? pick([360,380,400,420,450,480]) : pick([520,550,580,600,620,640]);
+    return {ob:'O5', kind:'mc', q:`O piesă călită este revenită la <b>${T} °C</b>. Ce tip de revenire este?`, opts:['revenire joasă','revenire medie','revenire înaltă'], ok:['joasă','medie','înaltă'].indexOf(zone),
+      ex:`Intervale uzuale: joasă 150–250 °C, medie 350–500 °C, înaltă 500–650 °C. ${T} °C se încadrează în revenirea ${zone}.`};
+  }
+  if (type==='C'){
+    const med = pick(['apa','ulei']); const st = pick(STEEL_C[med]);
+    return {ob:'O4', kind:'mc', q:`Ce mediu de răcire alegi la călirea unei piese din <b>${st}</b> (${med==='apa'?'oțel carbon nealiat':'oțel aliat'})?`, opts:['apă','ulei','aer','cuptor'], ok: med==='apa'?0:1,
+      ex: med==='apa' ? 'Oțelul carbon nealiat are o viteză critică de călire mare și are nevoie de răcire energică, în apă. Aerul și cuptorul ar însemna normalizare sau recoacere.'
+                      : 'Oțelul aliat are o viteză critică mai mică. Uleiul este suficient și reduce tensiunile și riscul de fisurare.'};
+  }
+  const zone = pick(['joasă','medie','înaltă']); const pc = pick(PIECES[zone]);
+  return {ob:'O5', kind:'mc', q:`Ce revenire aplici după călire pentru piesa: <b>${pc}</b>?`, opts:['revenire joasă (150–250 °C)','revenire medie (350–500 °C)','revenire înaltă (500–650 °C)'], ok:['joasă','medie','înaltă'].indexOf(zone),
+    ex: zone==='joasă' ? 'Sculele și calibrele trebuie să-și păstreze duritatea maximă: revenire joasă, martensită de revenire.'
+      : zone==='medie' ? 'Piesele elastice au nevoie de o limită de elasticitate ridicată: revenire medie, troostită de revenire.'
+      : 'Piesele solicitate la șoc și oboseală au nevoie de tenacitate: revenire înaltă (îmbunătățire), sorbită de revenire.'};
+}
+const SERIES = 10;
+function stepE6(){
+  return head('Evenimentul 6 · Obținerea performanței', 'Exersare (drill and practice)') + `
+  <p>O serie are <b>${SERIES} exerciții</b> generate aleatoriu. După fiecare răspuns primești imediat explicația. Poți relua oricâte serii: exercițiile se schimbă de fiecare dată.</p>
+  <div class="res K"><div class="reshead">${vakChips(['K'])}</div>
+  <div class="row small muted" style="justify-content:space-between"><span id="dprog"></span><span id="dscore"></span></div>
+  <div id="drill"></div></div>` + nav();
+}
+function drillStart(){ S.drill.i = 0; S.drill.ok = 0; S.drill.cur = genItem(); drillShow(); }
+function drillShow(){
+  const it = S.drill.cur;
+  $('#dprog').textContent = `Exercițiul ${S.drill.i+1} din ${SERIES} · obiectivul ${it.ob}`;
+  $('#dscore').textContent = `Corecte în serie: ${S.drill.ok}`;
+  const body = it.kind==='num'
+    ? `<div class="row"><input type="number" id="dnum" inputmode="numeric" min="600" max="1100" step="1" style="width:9rem" aria-label="Temperatura în grade Celsius"><span>°C</span><button class="btn" type="button" id="dsub">Verifică</button></div>`
+    : `<div class="opts">${it.opts.map((o,j)=>`<label class="opt"><input type="radio" name="dmc" id="dmc${j}" value="${j}"><span>${esc(o)}</span></label>`).join('')}</div><div class="row" style="margin-top:8px"><button class="btn" type="button" id="dsub">Verifică</button></div>`;
+  $('#drill').innerHTML = `<div class="q"><div class="qt">${it.q}</div>${body}<div id="dfb"></div></div>`;
+  $('#dsub').addEventListener('click', drillCheck);
+  const n = $('#dnum'); if (n) n.addEventListener('keydown', e=>{ if(e.key==='Enter') drillCheck(); });
+}
+function drillCheck(){
+  const it = S.drill.cur; let ok, given;
+  if (it.kind==='num'){ const v = parseFloat($('#dnum').value); if (isNaN(v)){ $('#dfb').innerHTML = '<div class="fb warn">Introdu o valoare numerică, în °C.</div>'; return; } given=v; ok = v>=it.lo && v<=it.hi; }
+  else { const r = $('input[name=dmc]:checked'); if(!r){ $('#dfb').innerHTML = '<div class="fb warn">Alege un răspuns.</div>'; return; } given=+r.value; ok = given===it.ok;
+    $$('#drill .opt').forEach((o,j)=>{ if(j===it.ok) o.classList.add('ok'); else if(j===given) o.classList.add('bad'); }); }
+  $('#dsub').disabled = true; $$('#drill input').forEach(i=>i.disabled=true);
+  S.drill.stats[it.ob].n++; if (ok){ S.drill.stats[it.ob].ok++; S.drill.ok++; }
+  store('drill', S.drill.stats);
+  const last = S.drill.i >= SERIES-1;
+  $('#dfb').innerHTML = `<div class="fb ${ok?'ok':'bad'}"><b>${ok?'Corect.':'Incorect.'}</b> ${it.ex}</div>
+    <div class="row" style="margin-top:10px"><button class="btn heat" type="button" id="dnext">${last?'Vezi rezultatul seriei':'Exercițiul următor →'}</button></div>`;
+  $('#dscore').textContent = `Corecte în serie: ${S.drill.ok}`;
+  $('#dnext').addEventListener('click', ()=>{ if (last) drillEnd(); else { S.drill.i++; S.drill.cur = genItem(); drillShow(); } });
+  $('#dnext').focus();
+}
+function drillEnd(){
+  const pct = Math.round(S.drill.ok/SERIES*100);
+  $('#dprog').textContent = 'Serie încheiată';
+  $('#drill').innerHTML = `<div class="q"><div class="score">${S.drill.ok} / ${SERIES}</div><p>${pct>=80?'Ai atins criteriul de reușită (cel puțin 80 % răspunsuri corecte).':'Nu ai atins încă pragul de 80 %. Analizează rezultatele pe obiective în etapa următoare și reia seria.'}</p>
+  <div class="row"><button class="btn heat" type="button" id="dagain">Serie nouă</button><button class="btn ghost" type="button" data-go="7">Vezi analiza pe obiective →</button></div></div>`;
+  $('#dagain').addEventListener('click', drillStart);
+}
+function bindE6(){ drillStart(); }
+
+/* ---------- 7. Feedback ---------- */
+function stepE7(){
+  const st = S.drill.stats;
+  const tips = {O3:'Recitește tabelul „Temperatura de încălzire” (etapa 4) și repetă sarcinile 1 și 3 din laborator.', O4:'Recitește tabelul „Mediul de răcire” (etapa 4) și repetă sarcina 2 din laborator.', O5:'Recitește tabelul revenirii (etapa 4, fila „Revenirea”) și folosește simulatorul de revenire.'};
+  const names = {O3:'Temperatura de călire', O4:'Mediul de răcire', O5:'Tipul de revenire'};
+  const total = Object.values(st).reduce((a,b)=>a+b.n,0);
+  return head('Evenimentul 7 · Asigurarea feedbackului', 'Cum stai pe fiecare obiectiv') + `
+  <p>Feedbackul imediat l-ai primit la fiecare exercițiu. Aici vezi imaginea de ansamblu: procentul de răspunsuri corecte la exersare, pe obiective, comparat cu criteriul de reușită de 80 %.</p>
+  ${total===0 ? '<div class="fb warn">Nu ai rezolvat încă exerciții. Parcurge etapa 6, apoi revino aici.</div>' : `
+  <div class="tbl"><table><thead><tr><th>Obiectiv</th><th class="num">Rezolvate</th><th class="num">Corecte</th><th class="num">Procent</th><th>Stare</th><th>Recomandare</th></tr></thead><tbody>
+  ${Object.entries(st).map(([k,v])=>{ const p = v.n? Math.round(v.ok/v.n*100) : null; const ok = p!==null && p>=80;
+    return `<tr><td>${k} · ${names[k]}</td><td class="num">${v.n}</td><td class="num">${v.ok}</td><td class="num">${p===null?'–':p+' %'}</td><td>${p===null?'<span class="verdict warn">neexersat</span>':ok?'<span class="verdict ok">atins</span>':'<span class="verdict bad">de consolidat</span>'}</td><td class="small">${p===null?'Rezolvă câteva exerciții de acest tip.':ok?'Poți trece la evaluare.':tips[k]}</td></tr>`; }).join('')}
+  </tbody></table></div>`}
+  <div class="row" style="margin-top:12px"><button class="btn ghost" type="button" id="resetdrill">Resetează statistica</button></div>` + nav();
+}
+function bindE7(){ $('#resetdrill').addEventListener('click', ()=>{ S.drill.stats = {O3:{ok:0,n:0},O4:{ok:0,n:0},O5:{ok:0,n:0}}; store('drill', S.drill.stats); render(); }); }
+
+/* ---------- 8. Evaluare (test docimologic) ---------- */
+let orderState = null;
+function stepE8(){
+  const its = C.test.items;
+  if (!orderState){ const it9 = its.find(i=>i.tip==='ordonare'); orderState = [2,0,3,1]; }
+  const subs = {I:'Subiectul I · itemi obiectivi (30 de puncte)', II:'Subiectul II · itemi obiectivi și semiobiectivi (30 de puncte)', III:'Subiectul III · item subiectiv (30 de puncte)'};
+  let html = head('Evenimentul 8 · Evaluarea performanței', 'Test de evaluare sumativă') + `
+  <p>Se acordă <b>${C.test.oficiu} puncte din oficiu</b>. Punctajul maxim este 100, iar nota este punctajul împărțit la 10. Subiectele I și II se corectează automat. Subiectul III se notează prin autoevaluare pe baza baremului și se validează de profesor.</p>`;
+  let cur = '';
+  its.forEach(it=>{
+    if (it.sub!==cur){ cur = it.sub; html += `<h3>${subs[cur]}</h3>`; }
+    html += `<div class="q" id="q-${it.id}"><div class="qh"><span class="qt">${it.id.replace('I','')}. ${esc(it.q)}</span><span class="pts">${fmt(it.p)} p · ${it.ob} · ${esc(it.bloom)}</span></div>`;
+    if (it.opts) html += `<div class="opts">${it.opts.map((o,j)=>`<label class="opt"><input type="radio" name="${it.id}" id="${it.id}_${j}" value="${j}"><span>${esc(o)}</span></label>`).join('')}</div>`;
+    if (it.tip==='asociere') html += `<div class="tbl"><table><tbody>${it.left.map((l,j)=>`<tr><td>${esc(l)}</td><td><select id="${it.id}_s${j}" aria-label="${esc(l)}"><option value="">alegeți…</option>${it.right.map((r,k)=>`<option value="${k}">${esc(r)}</option>`).join('')}</select></td></tr>`).join('')}</tbody></table></div>`;
+    if (it.tip==='ordonare') html += `<ol class="order" id="ord">${orderState.map((k,pos)=>`<li data-k="${k}"><span>${esc(it.steps[k])}</span><span class="mv"><button type="button" data-up="${pos}" aria-label="Mută mai sus">↑</button><button type="button" data-down="${pos}" aria-label="Mută mai jos">↓</button></span></li>`).join('')}</ol>`;
+    if (it.tip==='răspuns scurt (numeric)') html += `<div class="row"><input type="number" id="${it.id}_n" style="width:9rem" aria-label="Temperatura în grade Celsius"><span>°C</span></div>`;
+    if (it.tip==='eseu structurat') html += `<textarea id="${it.id}_t" placeholder="Scrie aici răspunsul argumentat…"></textarea><div id="barem"></div>`;
+    html += `<div class="fbx"></div></div>`;
+  });
+  html += `<div class="row"><button class="btn heat" type="button" id="tsub">Predă testul</button><span class="small muted" id="tmsg"></span></div><div id="tres"></div>`;
+  return html + nav();
+}
+function bindOrder(){
+  $$('#ord [data-up]').forEach(b=>b.addEventListener('click',()=>{ const p=+b.dataset.up; if(p>0){ [orderState[p-1],orderState[p]]=[orderState[p],orderState[p-1]]; redrawOrder(p-1,'up'); } }));
+  $$('#ord [data-down]').forEach(b=>b.addEventListener('click',()=>{ const p=+b.dataset.down; if(p<orderState.length-1){ [orderState[p+1],orderState[p]]=[orderState[p],orderState[p+1]]; redrawOrder(p+1,'down'); } }));
+}
+function redrawOrder(focusPos, dir){
+  const it = C.test.items.find(i=>i.tip==='ordonare');
+  $('#ord').innerHTML = orderState.map((k,pos)=>`<li data-k="${k}"><span>${esc(it.steps[k])}</span><span class="mv"><button type="button" data-up="${pos}" aria-label="Mută mai sus">↑</button><button type="button" data-down="${pos}" aria-label="Mută mai jos">↓</button></span></li>`).join('');
+  bindOrder();
+  const b = $(`#ord [data-${dir}="${focusPos}"]`); if (b) b.focus();
+}
+function gradeTest(){
+  const its = C.test.items; const res = {}; let auto = 0;
+  its.forEach(it=>{
+    let got = 0, detail = '';
+    if (it.opts){ const r = $(`input[name=${it.id}]:checked`); const v = r?+r.value:null; got = v===it.ok ? it.p : 0;
+      $$(`#q-${it.id} .opt`).forEach((o,j)=>{ o.classList.remove('ok','bad'); if(j===it.ok) o.classList.add('ok'); else if(j===v) o.classList.add('bad'); });
+      detail = v===null ? 'Fără răspuns.' : got ? 'Corect.' : `Răspuns corect: ${it.opts[it.ok]}.`; }
+    if (it.tip==='asociere'){ const per = it.p/it.left.length; let c = 0;
+      it.left.forEach((l,j)=>{ const v = $(`#${it.id}_s${j}`).value; if (v!=='' && +v===it.ok[j]) c++; });
+      got = c*per; detail = `${c} din ${it.left.length} asocieri corecte. Corect: ` + it.left.map((l,j)=>`${l} → ${it.right[it.ok[j]]}`).join('; ') + '.'; }
+    if (it.tip==='ordonare'){ const per = it.p/it.steps.length; let c = 0; orderState.forEach((k,pos)=>{ if(k===pos) c++; });
+      got = c*per; detail = `${c} din ${it.steps.length} etape în poziția corectă. Ordinea corectă: ` + it.steps.map((s,i)=>`${i+1}. ${s}`).join('; ') + '.'; }
+    if (it.tip==='răspuns scurt (numeric)'){ const v = parseFloat($(`#${it.id}_n`).value); got = (!isNaN(v) && v>=it.min && v<=it.max) ? it.p : 0;
+      detail = isNaN(v) ? `Fără răspuns. Se acceptă orice valoare între ${it.min} și ${it.max} °C (Ac3 + 30…50 °C).` : got ? 'Corect.' : `Se acceptă orice valoare între ${it.min} și ${it.max} °C (Ac3 + 30…50 °C).`; }
+    if (it.tip!=='eseu structurat'){ res[it.id] = got; auto += got;
+      $(`#q-${it.id} .fbx`).innerHTML = `<div class="fb ${got===it.p?'ok':got>0?'warn':'bad'}"><b>${fmt(got)} / ${fmt(it.p)} p.</b> ${esc(detail)}</div>`; }
+  });
+  return {res, auto};
+}
+function showBarem(){
+  const it = C.test.items.find(i=>i.tip==='eseu structurat');
+  $('#barem').innerHTML = `<div class="box" style="margin-top:10px"><b>Barem de autoevaluare</b><p class="small muted">Bifează doar criteriile pe care răspunsul tău le îndeplinește complet. Punctajul se validează de profesor, care poate acorda și punctaje parțiale.</p>
+    <div class="opts">${it.barem.map((b,j)=>`<label class="opt"><input type="checkbox" id="bar${j}" data-p="${b.p}"><span>${esc(b.c)} <span class="pts">(${b.p} p)</span></span></label>`).join('')}</div></div>`;
+  $$('#barem input').forEach(c=>c.addEventListener('change', summary));
+}
+let lastAuto = null;
+function summary(){
+  const its = C.test.items; const III = $$('#barem input:checked').reduce((a,c)=>a+ +c.dataset.p, 0);
+  const tot = lastAuto.auto + III + C.test.oficiu;
+  const byOb = {}, byBl = {};
+  its.forEach(it=>{ const g = it.tip==='eseu structurat' ? III : lastAuto.res[it.id];
+    byOb[it.ob] = byOb[it.ob]||{g:0,m:0}; byOb[it.ob].g+=g; byOb[it.ob].m+=it.p;
+    byBl[it.bloom] = byBl[it.bloom]||{g:0,m:0}; byBl[it.bloom].g+=g; byBl[it.bloom].m+=it.p; });
+  const order = ['A-și aminti','A înțelege','A aplica','A analiza','A evalua'];
+  $('#tres').innerHTML = `<h3>Rezultatul testului</h3>
+  <div class="kpis"><div class="kpi"><div class="k">Subiectele I–II (automat)</div><div class="v">${fmt(lastAuto.auto)} / 60</div></div>
+  <div class="kpi"><div class="k">Subiectul III (autoevaluare)</div><div class="v">${III} / 30</div></div>
+  <div class="kpi"><div class="k">Oficiu</div><div class="v">${C.test.oficiu}</div></div>
+  <div class="kpi"><div class="k">Nota</div><div class="v">${fmt((tot/10).toFixed(2))}</div></div></div>
+  <div class="grid2"><div class="tbl"><table><thead><tr><th>Obiectiv</th><th class="num">Puncte</th><th class="num">%</th></tr></thead><tbody>${Object.keys(byOb).sort().map(k=>`<tr><td>${k}</td><td class="num">${fmt(byOb[k].g)} / ${byOb[k].m}</td><td class="num">${Math.round(byOb[k].g/byOb[k].m*100)}</td></tr>`).join('')}</tbody></table></div>
+  <div class="tbl"><table><thead><tr><th>Nivel Bloom</th><th class="num">Puncte</th><th class="num">%</th></tr></thead><tbody>${order.filter(k=>byBl[k]).map(k=>`<tr><td>${k}</td><td class="num">${fmt(byBl[k].g)} / ${byBl[k].m}</td><td class="num">${Math.round(byBl[k].g/byBl[k].m*100)}</td></tr>`).join('')}</tbody></table></div></div>`;
+}
+function bindE8(){
+  bindOrder();
+  $('#tsub').addEventListener('click', ()=>{
+    lastAuto = gradeTest(); showBarem(); summary();
+    $('#tsub').textContent = 'Recorectează'; $('#tmsg').textContent = 'Completează baremul subiectului III pentru nota finală.';
+    $('#barem').scrollIntoView({block:'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto':'smooth'});
+  });
+}
+
+/* ---------- 9. Retenție și transfer ---------- */
+const TRANSFER = [['Pilă pentru metale', 0, 'Scula trebuie să rămână foarte dură: revenire joasă.'], ['Resort de supapă', 1, 'Piesă elastică: revenire medie, troostită de revenire.'], ['Pârghie solicitată la șoc', 2, 'Are nevoie de tenacitate: îmbunătățire, adică revenire înaltă.']];
+function stepE9(){
+  SAY.sum = 'De reținut. Călirea înseamnă încălzire peste temperatura critică, menținere și răcire rapidă. Rezultă martensită, dură și fragilă. Oțelurile hipoeutectoide se încălzesc la A c trei plus treizeci până la cincizeci de grade, iar cele hipereutectoide la A c unu plus treizeci până la cincizeci de grade. Oțelurile carbon se răcesc în apă, iar cele aliate în ulei. Revenirea urmează obligatoriu după călire, sub A c unu. Revenirea joasă se aplică sculelor, cea medie arcurilor, iar cea înaltă arborilor și bielelor.';
+  return head('Evenimentul 9 · Asigurarea retenției și a transferului', 'De reținut și de aplicat') + `
+  <div class="grid2">
+    <div class="res V box"><div class="reshead">${vakChips(['V'])}</div>
+      <b>Fișă de memorare</b>
+      <div class="tbl"><table><tbody>
+        <tr><th>Călire</th><td>austenitizare → menținere → răcire peste viteza critică → <b>martensită</b></td></tr>
+        <tr><th>Temperatura</th><td>hipoeutectoid: Ac3 + 30…50 °C · hipereutectoid: Ac1 + 30…50 °C</td></tr>
+        <tr><th>Răcire</th><td>oțel carbon: apă · oțel aliat: ulei</td></tr>
+        <tr><th>Revenire</th><td>obligatorie, sub Ac1 · joasă 150–250 °C (scule) · medie 350–500 °C (arcuri) · înaltă 500–650 °C (arbori)</td></tr>
+        <tr><th>Îmbunătățire</th><td>călire + revenire înaltă</td></tr>
+      </tbody></table></div>
+    </div>
+    <div class="res A box"><div class="reshead">${vakChips(['A'])}</div><p>Ascultă rezumatul lecției, de exemplu înaintea testului.</p>${audioBtn('sum')}</div>
+  </div>
+  <h3>Transfer: piese noi</h3>
+  <p>Aceste piese nu au apărut în lecție. Alege revenirea potrivită pentru fiecare.</p>
+  <div class="res K"><div class="reshead">${vakChips(['K'])}</div>
+  ${TRANSFER.map((t,i)=>`<div class="q" data-tr="${i}"><div class="qt">${esc(t[0])}</div><div class="seg" style="margin-top:6px">${['joasă','medie','înaltă'].map((z,j)=>`<label><input type="radio" name="tr${i}" id="tr${i}_${j}" value="${j}">revenire ${z}</label>`).join('')}</div><div class="fbx"></div></div>`).join('')}
+  </div>
+  <h3>Temă pentru acasă</h3>
+  <p>Alege o unealtă sau o piesă din gospodărie ori din atelier (cuțit, șurubelniță, arc de pix, cheie fixă). Scrie, în cel mult 10 rânduri, ce tratament termic presupui că a primit și de ce, folosind termenii din lecție.</p>
+  <div id="kahoot"></div>` + nav();
+}
+function bindE9(){
+  $$('[data-tr]').forEach(box=>box.addEventListener('change', e=>{
+    const i = +box.dataset.tr, v = +e.target.value, t = TRANSFER[i];
+    $('.fbx', box).innerHTML = `<div class="fb ${v===t[1]?'ok':'bad'}">${v===t[1]?'Corect.':'Nu este alegerea potrivită.'} ${esc(t[2])}</div>`;
+  }));
+  if (window.KAHOOT_URL) $('#kahoot').innerHTML = `<h3>Recapitulare prin joc</h3><p>Testul de recapitulare există și în varianta de joc Kahoot!, pentru lucrul cu întreaga clasă. Profesorul îl lansează la <a href="${window.KAHOOT_URL}" target="_blank" rel="noopener">această adresă</a>.</p>`;
+}
+
+/* ---------- randare ---------- */
+const VIEWS = [[stepVAK,bindVAK],[stepE1,bindE1],[stepE2,null],[stepE3,bindE3],[stepE4,bindE4],[stepE5,bindE5],[stepE6,bindE6],[stepE7,bindE7],[stepE8,bindE8],[stepE9,bindE9]];
+function render(){
+  renderRail();
+  const [v,b] = VIEWS[S.step];
+  $('#panel').innerHTML = v();
+  if (b) b();
+}
+document.addEventListener('click', e=>{
+  const g = e.target.closest('[data-go]'); if (g){ go(+g.dataset.go); return; }
+  const s = e.target.closest('[data-say]'); if (s){ const has = speak(SAY[s.dataset.say]||''); if (!has){ const host = s.closest('.box')||s.parentElement; let m = host.querySelector('.amsg'); if(!m){ m = document.createElement('p'); m.className = 'small muted amsg'; host.appendChild(m); } m.textContent = window.speechSynthesis ? 'Browserul nu are o voce românească instalată; textul se citește cu vocea implicită.' : 'Browserul nu permite redarea audio a textului. Citește textul din pagină.'; } return; }
+  if (e.target.closest('[data-stop]')) stopSpeak();
+});
+try{ window.speechSynthesis && window.speechSynthesis.getVoices(); }catch(e){}
+applyVAK();
+render();
+</script>
+
+</body>
+</html>
